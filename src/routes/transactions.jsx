@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import { flexRender, getCoreRowModel, getPaginationRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
 import {  Search, CreditCard, ChevronUp, ChevronDown, DollarSign } from "lucide-react";
-import Modal from "@/components/Modal";
+import Modal from "@/components/modal";
 import RideStatCard from "@/components/RideStatCard";
 import api from "@/utils/api";
 
