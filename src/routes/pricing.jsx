@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import { flexRender, getCoreRowModel, getPaginationRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
 import { Search, Plus, Edit, Trash2, ChevronUp, ChevronDown } from "lucide-react";
-import Modal from "@/components/Modal";
+import Modal from "@/components/modal";
 import api from "@/utils/api";
 
 const PricingManagement = () => {
