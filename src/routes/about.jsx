@@ -91,7 +91,7 @@ const About = () => {
             </div>
             <section className="py-16 px-4 md:px-8">
                 <div className="container mx-auto">
-                    <div className="flex flex-col md:flex-row items-center gap-8">
+                    <div className="flex flex-col md:flex-row items-stretch gap-8">
                         <div className="md:w-1/2">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="col-span-1">
