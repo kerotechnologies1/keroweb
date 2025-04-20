@@ -89,9 +89,73 @@ const About = () => {
                     </div>
                 </div>
             </div>
+            <section className="py-16 px-4 md:px-8">
+                <div className="container mx-auto">
+                    <div className="flex flex-col md:flex-row items-center gap-8">
+                        <div className="md:w-1/2">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="col-span-1">
+                                    <div className="global-img">
+                                        <img src={images.about4} className="w-full h-full object-cover rounded-lg" alt="Urban mobility with Kero Ride" />
+                                    </div>
+                                </div>
+                                <div className="col-span-1">
+                                    <div className="global-img">
+                                        <img src={images.about5} className="w-full mb-4 rounded-lg" alt="Kero Ride driver at work" />
+                                    </div>
+                                    <div className="global-img">
+                                        <img src={images.about6} className="w-full rounded-lg" alt="Kero Ride passenger experience" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="md:w-1/2">
+                            <h2 className="text-4xl md:text-5xl font-medium leading-tight mb-6">Our Mission</h2>
+                            <p className="text-lg leading-relaxed mb-4">
+                                At Kero Ride, our mission is to revolutionize urban mobility by providing safe, reliable, affordable, and tech-driven transportation solutions tailored to meet the dynamic needs of individuals and communities across Nigeria.
+                            </p>
+                            <p className="text-lg leading-relaxed mb-4">
+                                We are committed to enhancing the everyday commuting experience through innovation, empowering local drivers, and prioritizing customer satisfaction. Rooted in integrity and driven by a vision of inclusive economic growth, we offer not just a ride, but an experience that promotes safety, dignity, and accessibility for all.
+                            </p>
+                            <p className="text-lg leading-relaxed mb-4">
+                                Our mission includes advancing smart mobility solutions that address Nigerian cities’ unique challenges—from traffic congestion to infrastructural gaps—creating a more fluid and equitable urban experience.
+                            </p>
+                            <p className="text-lg leading-relaxed">
+                                Through strategic partnerships, cutting-edge technology, and data-driven decisions, Kero Ride aims to contribute to Nigeria’s digital economy and position Lagos as a model for intelligent transportation across Africa.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Values Section */}
+            <section className="py-16 px-4 md:px-8 bg-white">
+                <div className="container mx-auto">
+                    <div className="flex flex-col md:flex-row-reverse items-center gap-8">
+                        <div className="md:w-1/2 global-img">
+                            <img src={images.hero3} className="w-full rounded-lg" alt="Our Values at Kero Ride" />
+                        </div>
+                        <div className="md:w-1/2">
+                            <h2 className="text-4xl md:text-5xl font-medium leading-tight mb-6">Our Values</h2>
+                            <ul className="list-disc pl-5 space-y-4 text-lg leading-relaxed">
+                                <li><strong>Safety First:</strong> We prioritize safety with rigorous standards, real-time features, and continuous training.</li>
+                                <li><strong>Excellence & Innovation:</strong> We embrace tech and continuous improvement to redefine urban transport quality.</li>
+                                <li><strong>Integrity & Accountability:</strong> We operate transparently, uphold ethics, and build public trust through responsibility.</li>
+                                <li><strong>Empowerment & Inclusion:</strong> Our platform lifts drivers and ensures equal opportunity regardless of background.</li>
+                                <li><strong>Customer-Centricity:</strong> Riders are central to our service. We listen, learn, and adapt to deliver satisfaction.</li>
+                                <li><strong>Environmental Responsibility:</strong> We commit to sustainability and eco-conscious growth practices.</li>
+                                <li><strong>Community Impact:</strong> Kero Ride empowers communities through employment, partnerships, and local initiatives.</li>
+                                <li><strong>Technology-Driven Solutions:</strong> We optimize routes and services through data and innovation for efficiency.</li>
+                                <li><strong>Transparency & Fair Pricing:</strong> Our pricing is honest, clear, and fair for both riders and drivers.</li>
+                                <li><strong>Collaboration & Growth:</strong> We grow together—drivers, riders, policymakers, and partners alike.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             {/* Mission Section */}
-            <section className="py-16 px-4 md:px-8">
+            {/*             <section className="py-16 px-4 md:px-8">
                 <div className="container mx-auto">
                     <div className="flex flex-col md:flex-row items-center gap-8">
                         <div className="md:w-1/2">
@@ -121,10 +185,10 @@ const About = () => {
                         </div>
                     </div>
                 </div>
-            </section>
+            </section> */}
 
             {/* Values Section */}
-            <section className="py-16 px-4 md:px-8 bg-white">
+            {/*             <section className="py-16 px-4 md:px-8 bg-white">
                 <div className="container mx-auto">
                     <div className="flex flex-col md:flex-row-reverse items-center gap-8">
                         <div className="md:w-1/2 global-img">
@@ -140,10 +204,10 @@ const About = () => {
                         </div>
                     </div>
                 </div>
-            </section>
+            </section> */}
 
             {/* Team Section */}
-            <section className="py-16 px-4 md:px-8">
+{/*             <section className="py-16 px-4 md:px-8">
                 <div className="container mx-auto">
                     <h2 className="text-4xl md:text-5xl font-medium text-center mb-12">Meet our Team</h2>
 
@@ -170,7 +234,7 @@ const About = () => {
                         ))}
                     </Swiper>
                 </div>
-            </section>
+            </section> */}
 
             <Footer />
         </div>
