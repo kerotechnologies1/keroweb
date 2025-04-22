@@ -427,7 +427,7 @@ const Drivers = () => {
 				{/* Pagination */}
 				<div className="mt-4 flex items-center justify-between">
 					<div>
-						<span className="text-sm text-gray-700">
+						<span className="text-sm text-gray-700 dark:text-white">
 							Showing <span className="font-medium">{table.getRowModel().rows.length}</span> of{" "}
 							<span className="font-medium">{filteredDrivers.length}</span> results
 						</span>
@@ -524,7 +524,7 @@ const Drivers = () => {
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <p className="text-sm">Driver's License</p>
+                            <p className="text-sm">Driver&apos;s License</p>
                             {selectedDriver.vehicle?.driverLicense ? (
                                 <a
                                     href={selectedDriver.vehicle.driverLicense}

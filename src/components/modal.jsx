@@ -39,11 +39,11 @@ const Modal = ({ isOpen, onClose, title, children }) => {
                         leaveFrom="opacity-100 scale-100"
                         leaveTo="opacity-0 scale-95"
                     >
-                        <div className="relative flex max-h-[85%] w-full max-w-lg flex-col rounded-lg bg-white p-6 shadow-lg dark:bg-gray-900 lg:min-w-[50%]">
+                        <div className="relative flex max-h-[85%] w-full max-w-lg flex-col dark:text-white rounded-lg bg-white p-6 shadow-lg dark:bg-primary-900 lg:min-w-[50%]">
                             {/* Close Button (Icon) */}
                             <button
                                 onClick={onClose}
-                                className="absolute right-4 top-4 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                                className="absolute right-4 top-4 text-gray-500 hover:text-gray-700 dark:text-white dark:hover:text-gray-300"
                             >
                                 <X size={24} />
                             </button>

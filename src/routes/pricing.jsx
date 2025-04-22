@@ -96,7 +96,7 @@ const PricingManagement = () => {
         setFormData({
             pricePerKm: pricing.pricePerKm,
             keroCommission: pricing.keroCommission,
-            vehicleType: pricing.vehicleType,
+            vehicleType: pricing.vehicleType._id, // Make sure to use the ID
         });
         setIsModalOpen(true);
     };
@@ -171,6 +171,7 @@ const PricingManagement = () => {
             {
                 accessorKey: "vehicleType",
                 header: "Vehicle Type",
+                cell: (info) => info.getValue().name,
             },
             {
                 accessorKey: "pricePerKm",
@@ -301,7 +302,7 @@ const PricingManagement = () => {
                 {/* Pagination */}
                 <div className="mt-4 flex items-center justify-between">
                     <div>
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-gray-700 dark:text-white">
                             Showing <span className="font-medium">{table.getRowModel().rows.length}</span> of <span className="font-medium">{filteredPricing.length}</span> results
                         </span>
                     </div>
@@ -323,32 +324,32 @@ const PricingManagement = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Vehicle Type</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-white">Vehicle Type</label>
                             <select
                                 name="vehicleType"
                                 value={formData.vehicleType}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+                                className="mt-1 block w-full rounded-md border dark:text-gray-700 border-gray-300 py-2 px-3 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
                                 required
                                 disabled={isEditMode}
                             >
-                                <option value="">Select Vehicle Type</option>
+                                <option className="dark:text-gray-700" value="">Select Vehicle Type</option>
                                 {vehicleTypes.map((type) => (
                                     <option key={type._id} value={type._id}>
-                                        {type}
+                                        {type.name}
                                     </option>
                                 ))}
                             </select>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Price Per Km (₦)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-white">Price Per Km (₦)</label>
                             <input
                                 type="number"
                                 name="pricePerKm"
                                 value={formData.pricePerKm}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+                                className="mt-1 block w-full rounded-md border dark:text-gray-700 border-gray-300 py-2 px-3 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
                                 required
                                 min="0"
                                 step="0.01"
@@ -356,13 +357,13 @@ const PricingManagement = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Kero Commission (₦)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-white">Kero Commission (₦)</label>
                             <input
                                 type="number"
                                 name="keroCommission"
                                 value={formData.keroCommission}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+                                className="mt-1 block w-full rounded-md border dark:text-gray-700  border-gray-300 py-2 px-3 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
                                 required
                                 min="0"
                                 step="0.01"
@@ -373,13 +374,13 @@ const PricingManagement = () => {
                             <button
                                 type="button"
                                 onClick={() => setIsModalOpen(false)}
-                                className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700  shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
-                                className="rounded-md border border-transparent bg-primary-500 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                className="rounded-md border border-transparent bg-primary-500 dark:bg-secondary-500 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
                             >
                                 {isEditMode ? "Update" : "Create"}
                             </button>
