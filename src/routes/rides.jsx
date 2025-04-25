@@ -5,6 +5,9 @@ import { CheckCircle, Clock, XCircle, Search, MapPin, ChevronUp, ChevronDown, Do
 import Modal from "@/components/modal";
 import RideStatCard from "@/components/RideStatCard";
 import api from "@/utils/api";
+import RideMap from "@/components/RideMap";
+
+
 
 const Rides = () => {
     const [rides, setRides] = useState([]);
@@ -12,6 +15,7 @@ const Rides = () => {
     const [sorting, setSorting] = useState([]);
     const [activeTab, setActiveTab] = useState("all"); // 'all', 'completed', 'pending', 'cancelled'
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isMapModalOpen, setIsMapModalOpen] = useState(false)
     const [selectedRide, setSelectedRide] = useState(null);
     const [globalFilter, setGlobalFilter] = useState("");
     const [stats, setStats] = useState({
@@ -63,6 +67,11 @@ const Rides = () => {
         setSelectedRide(ride);
         setIsModalOpen(true);
     };
+
+    const openMapModal = (ride) => {
+        setSelectedRide(ride);
+        setIsMapModalOpen(true);
+      }
 
     // Stats cards data
     const statsCards = useMemo(
@@ -385,9 +394,17 @@ const Rides = () => {
                                     <p className="text-sm">Rider</p>
                                     <p className="text-md">{selectedRide.riderName || "N/A"}</p>
                                 </div>
-                            </div>
 
-                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm">Start Location</p>
+                                    <p className="text-md">{selectedRide.startLocation.address || "N/A"}</p>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm">End Location</p>
+                                    <p className="text-md">{selectedRide.startLocation.address || "N/A"}</p>
+                                </div>
+
                                 <div className="flex items-center justify-between">
                                     <p className="text-sm">Distance</p>
                                     <div className="flex items-center gap-1">
@@ -399,7 +416,6 @@ const Rides = () => {
                                 <div className="flex items-center justify-between">
                                     <p className="text-sm">Fare</p>
                                     <div className="flex items-center gap-1">
-                                        <DollarSign className="h-4 w-4 text-gray-500" />
                                         <p className="text-md">₦{parseFloat(selectedRide.fare).toFixed(2)}</p>
                                     </div>
                                 </div>
@@ -421,7 +437,9 @@ const Rides = () => {
                             </div>
                         </div>
 
-                        <div className="border-t pt-4">
+                        
+
+                        <div className="border-t pt-4 text-center">
                             <h4 className="mb-2 font-medium">Additional Information</h4>
                             <p className="text-sm text-gray-600">
                                 {selectedRide.status === "completed"
@@ -430,9 +448,33 @@ const Rides = () => {
                                       ? "This ride is currently pending assignment or in progress."
                                       : "This ride was cancelled or rejected."}
                             </p>
+                            <div className="flex justify-center pt-4">
+                                <button
+                                    onClick={() => {
+                                        setIsModalOpen(false);
+                                        openMapModal(selectedRide);
+                                    }}
+                                    className="rounded-md bg-primary-500 px-4 py-2 text-white hover:bg-primary-800"
+                                >
+                                    View Ride on Map
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
+            </Modal>
+
+            {/* Map Modal */}
+            <Modal isOpen={isMapModalOpen} onClose={() => {setIsMapModalOpen(false); setIsModalOpen(true);}} size="xl">
+              {selectedRide && (
+                <div className="h-[500px]">
+                  <h3 className="mb-4 text-center text-xl font-bold">Ride Path</h3>
+                  <RideMap 
+                    startLocation={selectedRide.startLocation} 
+                    endLocation={selectedRide.endLocation} 
+                  />
+                </div>
+              )}
             </Modal>
         </div>
     );
