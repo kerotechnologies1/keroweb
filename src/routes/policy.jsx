@@ -12,6 +12,37 @@ const Policy = () => {
       
       <div className="container mx-auto mt-5 px-4 md:px-16">
         <div className="mb-8">
+            <h2 className="text-3xl font-medium mb-4">PRIVACY POLICY</h2>
+            <p className="text-sm fw-light mb-4">Kero Tech Logistics is committed to protecting your privacy. This Privacy Policy outlines how we collect, use, disclose, and safeguard your information when you use our services.</p>
+            
+            <h3 className="text-xl font-medium mb-4">Information We Collect</h3>
+            <ul className="pl-5 space-y-2 mb-6 text-sm">
+              <li className="pl-5">Personal information such as your name, email address, phone number, and payment details.</li>
+              <li className="pl-5">Trip details, including pick-up and drop-off locations.</li>
+              <li className="pl-5">Device and usage data to improve our services.</li>
+            </ul>
+          
+            <h3 className="text-xl font-medium mb-4">How We Use Your Information</h3>
+            <ul className="pl-5 space-y-2 mb-6 text-sm">
+              <li className="pl-5">To facilitate trip bookings and payments.</li>
+              <li className="pl-5">To improve customer support and service performance.</li>
+              <li className="pl-5">To communicate updates, offers, or service changes.</li>
+            </ul>
+          
+            <h3 className="text-xl font-medium mb-4">Sharing of Information</h3>
+            <p className="text-sm fw-light mb-4">We may share your information with service providers, partners, and government authorities as required by law or to fulfill service obligations.</p>
+          
+            <h3 className="text-xl font-medium mb-4">Data Security</h3>
+            <p className="text-sm fw-light mb-4">We implement appropriate technical and organizational measures to protect your personal data from unauthorized access, use, or disclosure.</p>
+          
+            <h3 className="text-xl font-medium mb-4">Data Deletion</h3>
+            <p className="text-sm fw-light mb-4">You can request the deletion of your account and associated data by contacting our support team at <a href="mailto:support@kerotechlogistics.com" className="text-blue-600">support@kerotechlogistics.com</a>.</p>
+          
+            <h3 className="text-xl font-medium mb-4">Contact Us</h3>
+            <p className="text-sm fw-light mb-4">If you have questions or concerns about this policy, please contact us at <a href="mailto:support@kerotechlogistics.com" className="text-blue-600">support@kerotechlogistics.com</a>.</p>
+          </div>
+
+        <div className="mb-8">
             <h2 className="text-3xl font-medium mb-4">ACCEPTABLE USER POLICY</h2>
             <p className="text-sm fw-light mb-4">Kero Tech Logistics&apos; Acceptable Use Policy (AUP) is designed to ensure the integrity, reliability, and stability of their platform. Here are some key points from the policy:</p>
             <ul className="pl-5 space-y-2 mb-6 text-sm">
