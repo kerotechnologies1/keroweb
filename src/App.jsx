@@ -34,7 +34,7 @@ const router = createBrowserRouter([
         element: <DriverTerms />,
     },
     {
-        path: "/policy",
+        path: "/privacy",
         element: <Policy />,
     },
     {

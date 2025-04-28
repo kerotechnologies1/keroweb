@@ -10,7 +10,7 @@ const Footer = () => {
             { path: "/about", text: "About Us" },
         ],
         legal: [
-            { path: "/policy", text: "Privacy Policy" },
+            { path: "/privacy", text: "Privacy Policy" },
             { path: "/become-a-driver", text: "Terms & Condition" },
         ]
     };
