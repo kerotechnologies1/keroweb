@@ -42,6 +42,22 @@ const Policy = () => {
             <p className="text-sm fw-light mb-4">If you have questions or concerns about this policy, please contact us at <a href="mailto:support@kerotechlogistics.com" className="text-blue-600">support@kerotechlogistics.com</a>.</p>
           </div>
 
+        <div className="container mx-auto mt-5 px-4 md:px-16">
+          <div className="mb-8">
+            <h2 className="text-3xl font-medium mb-4">Location Data Usage</h2>
+            <p className="text-sm fw-light mb-4">
+              Our app collects location data to enable core features such as matching you with drivers, providing real-time ride updates, calculating trip routes, and improving service efficiency. This data is collected when the app is running in the foreground and, in certain cases, when running in the background if location permission is granted.
+            </p>
+            <p className="text-sm fw-light mb-4">
+              Location information is only shared with drivers, logistics partners, or service providers as necessary to complete your requests. We do not sell or rent your location data to third parties for marketing purposes.
+            </p>
+            <p className="text-sm fw-light mb-4">
+              You can manage or revoke location access at any time through your device settings. However, restricting location access may affect the app’s ability to provide services effectively.
+            </p>
+          </div>
+        </div>
+
+
         <div className="mb-8">
             <h2 className="text-3xl font-medium mb-4">ACCEPTABLE USER POLICY</h2>
             <p className="text-sm fw-light mb-4">Kero Tech Logistics&apos; Acceptable Use Policy (AUP) is designed to ensure the integrity, reliability, and stability of their platform. Here are some key points from the policy:</p>
