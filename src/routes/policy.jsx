@@ -36,10 +36,10 @@ const Policy = () => {
             <p className="text-sm fw-light mb-4">We implement appropriate technical and organizational measures to protect your personal data from unauthorized access, use, or disclosure.</p>
           
             <h3 className="text-xl font-medium mb-4">Data Deletion</h3>
-            <p className="text-sm fw-light mb-4">You can request the deletion of your account and associated data by contacting our support team at <a href="mailto:support@kerotechlogistics.com" className="text-blue-600">support@kerotechlogistics.com</a>.</p>
+            <p className="text-sm fw-light mb-4">You can request the deletion of your account and associated data by contacting our support team at <a href="mailto:support@kerotechnologies.com" className="text-blue-600">support@kerotechnologies.com</a>.</p>
           
             <h3 className="text-xl font-medium mb-4">Contact Us</h3>
-            <p className="text-sm fw-light mb-4">If you have questions or concerns about this policy, please contact us at <a href="mailto:support@kerotechlogistics.com" className="text-blue-600">support@kerotechlogistics.com</a>.</p>
+            <p className="text-sm fw-light mb-4">If you have questions or concerns about this policy, please contact us at <a href="mailto:support@kerotechnologies.com" className="text-blue-600">support@kerotechnologies.com</a>.</p>
           </div>
 
         <div className="container mx-auto mt-5 px-4 md:px-16">
