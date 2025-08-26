@@ -237,7 +237,7 @@ const Drivers = ({ showReview = true, showWalletBalance = true }) => {
             {
                 accessorKey: "vehicle.model",
                 header: "Vehicle Type",
-                cell: (info) => `${info.getValue() || 'N/A'} ${info.row.original.vehicle?.year || ""}`,
+                cell: (info) => `${info.getValue() || "N/A"} ${info.row.original.vehicle?.year || ""}`,
             },
             {
                 accessorKey: "firstname",
@@ -257,18 +257,22 @@ const Drivers = ({ showReview = true, showWalletBalance = true }) => {
                 header: "KYC Status",
                 cell: () => <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs text-yellow-800">On Review</span>,
             },
-            ...(showReview ? [{
-                id: "actions",
-                header: "Actions",
-                cell: ({ row }) => (
-                    <button
-                        onClick={() => openDriverModal(row.original)}
-                        className="rounded-md bg-secondary-500 px-3 py-1 text-white transition hover:bg-secondary-600"
-                    >
-                        Review
-                    </button>
-                ),
-            }] : []),
+            ...(showReview
+                ? [
+                      {
+                          id: "actions",
+                          header: "Actions",
+                          cell: ({ row }) => (
+                              <button
+                                  onClick={() => openDriverModal(row.original)}
+                                  className="rounded-md bg-secondary-500 px-3 py-1 text-white transition hover:bg-secondary-600"
+                              >
+                                  Review
+                              </button>
+                          ),
+                      },
+                  ]
+                : []),
         ],
         [showReview],
     );
@@ -288,7 +292,7 @@ const Drivers = ({ showReview = true, showWalletBalance = true }) => {
             {
                 accessorKey: "vehicle.model",
                 header: "Vehicle Type",
-                cell: (info) => `${info.getValue() || 'N/A'} ${info.row.original.vehicle?.year || ""}`,
+                cell: (info) => `${info.getValue() || "N/A"} ${info.row.original.vehicle?.year || ""}`,
             },
             {
                 accessorKey: "firstname",
@@ -318,11 +322,15 @@ const Drivers = ({ showReview = true, showWalletBalance = true }) => {
                     </div>
                 ),
             },
-            ...(showWalletBalance ? [{
-                accessorKey: "walletBalance",
-                header: "Wallet Balance",
-                cell: (info) => `₦${parseFloat(info.getValue() || 0).toFixed(2)}`,
-            }] : []),
+            ...(showWalletBalance
+                ? [
+                      {
+                          accessorKey: "walletBalance",
+                          header: "Wallet Balance",
+                          cell: (info) => `₦${parseFloat(info.getValue() || 0).toFixed(2)}`,
+                      },
+                  ]
+                : []),
         ],
         [],
     );
@@ -426,7 +434,7 @@ const Drivers = ({ showReview = true, showWalletBalance = true }) => {
 
                 <div
                     className="w-full overflow-x-auto"
-                    style={{ maxHeight: "calc(100vh - 300px)" }}
+                    style={{ maxHeight: "calc(100vh - 100px)" }}
                 >
                     <table className="w-full border-collapse">
                         <thead className="sticky top-0 bg-gray-50">
@@ -454,7 +462,9 @@ const Drivers = ({ showReview = true, showWalletBalance = true }) => {
                                 <tr
                                     key={row.id}
                                     className={`hover:bg-gray-50 ${
-                                        (activeTab === "emailUnverified" || activeTab === "emailVerified" || activeTab === "kycApproved") ? "cursor-pointer" : ""
+                                        activeTab === "emailUnverified" || activeTab === "emailVerified" || activeTab === "kycApproved"
+                                            ? "cursor-pointer"
+                                            : ""
                                     }`}
                                     onClick={() => {
                                         // Only open modal on row click for non-review tabs
@@ -568,10 +578,12 @@ const Drivers = ({ showReview = true, showWalletBalance = true }) => {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between">
-                                    <p className="text-sm">Wallet Balance</p>
-                                    <p className="text-md">₦{parseFloat(selectedDriver.walletBalance || 0).toFixed(2)}</p>
-                                </div>
+                                {showWalletBalance && (
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm">Wallet Balance</p>
+                                        <p className="text-md">₦{parseFloat(selectedDriver.walletBalance || 0).toFixed(2)}</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

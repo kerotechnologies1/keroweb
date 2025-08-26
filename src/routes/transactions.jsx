@@ -429,7 +429,7 @@ const Transactions = ({ lagosAdmin = false }) => {
 
                 <div
                     className="w-full overflow-x-auto"
-                    style={{ maxHeight: "calc(100vh - 300px)" }}
+                    style={{ maxHeight: "calc(100vh - 100px)" }}
                 >
                     <table className="w-full border-collapse">
                         <thead className="sticky top-0 bg-gray-50">

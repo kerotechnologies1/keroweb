@@ -236,7 +236,12 @@ const router = createBrowserRouter([
             },
             {
                 path: "rides",
-                element: <Rides showKeroCommission={false} />,
+                element: (
+                    <Rides
+                        showKeroCommission={false}
+                        showFare={false}
+                    />
+                ),
             },
             {
                 path: "drivers",
@@ -249,7 +254,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "riders",
-                element: <Riders />,
+                element: <Riders showWalletBalance={false} />,
             },
             {
                 path: "transactions",

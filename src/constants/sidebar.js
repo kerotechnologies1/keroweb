@@ -9,7 +9,7 @@ export const defaultMenuItems = [
     { label: "Pricing", path: "/dashboard/pricing", icon: DollarSign },
     { label: "Transactions", path: "/dashboard/transactions", icon: Receipt },
     { label: "Admin Management", path: "/dashboard/admins", icon: Shield },
-    { label: "Settings", path: "/dashboard/settings", icon: Settings },
+    // { label: "Settings", path: "/dashboard/settings", icon: Settings },
     { label: "Logout", path: "/dashboard/logout", icon: LogOut },
 ];
 
