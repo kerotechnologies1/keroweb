@@ -18,6 +18,7 @@ const PricingManagement = () => {
     const [formData, setFormData] = useState({
         pricePerKm: "",
         keroCommission: "",
+        lagosCommission: "30",
         vehicleType: "",
     });
 
@@ -26,7 +27,7 @@ const PricingManagement = () => {
         const loadingToast = toast.loading("Fetching pricing data...");
         try {
             const response = await api.get("/admin/pricing");
-            console.log(response.data.data);
+            // console.log(response.data.data);
             setPricing(response.data.data);
             setFilteredPricing(response.data.data);
             toast.update(loadingToast, {
@@ -51,7 +52,7 @@ const PricingManagement = () => {
         try {
             const response = await api.get("/admin/vehicletypes");
             setVehicleTypes(response.data.data);
-            console.log(response.data);
+            // console.log(response.data);
             toast.update(loadingToast, {
                 render: "Vehicle Type loaded",
                 type: "success",
@@ -84,6 +85,7 @@ const PricingManagement = () => {
         setFormData({
             pricePerKm: "",
             keroCommission: "",
+            lagosCommission: "30",
             vehicleType: "",
         });
         setIsModalOpen(true);
@@ -96,6 +98,7 @@ const PricingManagement = () => {
         setFormData({
             pricePerKm: pricing.pricePerKm,
             keroCommission: pricing.keroCommission,
+            lagosCommission: pricing.lagosCommission || "30",
             vehicleType: pricing.vehicleType._id, // Make sure to use the ID
         });
         setIsModalOpen(true);
@@ -107,23 +110,14 @@ const PricingManagement = () => {
         const loadingToast = toast.loading(isEditMode ? "Updating pricing..." : "Creating new pricing...");
 
         try {
-            if (isEditMode) {
-                await api.put(`/admin/pricing/${currentPricing._id}`, formData);
-                toast.update(loadingToast, {
-                    render: "Pricing updated successfully",
-                    type: "success",
-                    isLoading: false,
-                    autoClose: 2000,
-                });
-            } else {
-                await api.post("/admin/pricing", formData);
-                toast.update(loadingToast, {
-                    render: "Pricing created successfully",
-                    type: "success",
-                    isLoading: false,
-                    autoClose: 2000,
-                });
-            }
+            // Use POST for both create and update as per requirements
+            await api.post("/admin/pricing", formData);
+            toast.update(loadingToast, {
+                render: isEditMode ? "Pricing updated successfully" : "Pricing created successfully",
+                type: "success",
+                isLoading: false,
+                autoClose: 2000,
+            });
             setIsModalOpen(false);
             getPricing();
         } catch (error) {
@@ -180,18 +174,29 @@ const PricingManagement = () => {
             },
             {
                 accessorKey: "keroCommission",
-                header: "Commission (₦)",
+                header: "Kero Commission (₦)",
                 cell: (info) => `₦${info.getValue()}`,
+            },
+            {
+                accessorKey: "lagosCommission",
+                header: "Lagos Commission (₦)",
+                cell: (info) => `₦${info.getValue() || 30}`,
             },
             {
                 id: "actions",
                 header: "Actions",
                 cell: ({ row }) => (
                     <div className="flex space-x-2">
-                        <button onClick={() => openEditModal(row.original)} className="rounded-md bg-blue-500 p-2 text-white hover:bg-blue-600">
+                        <button
+                            onClick={() => openEditModal(row.original)}
+                            className="rounded-md bg-blue-500 p-2 text-white hover:bg-blue-600"
+                        >
                             <Edit size={16} />
                         </button>
-                        <button onClick={() => handleDelete(row.original._id)} className="rounded-md bg-red-500 p-2 text-white hover:bg-red-600">
+                        <button
+                            onClick={() => handleDelete(row.original._id)}
+                            className="rounded-md bg-red-500 p-2 text-white hover:bg-red-600"
+                        >
                             <Trash2 size={16} />
                         </button>
                     </div>
@@ -199,7 +204,7 @@ const PricingManagement = () => {
                 enableSorting: false,
             },
         ],
-        []
+        [],
     );
 
     // Initialize table
@@ -230,14 +235,17 @@ const PricingManagement = () => {
     }, []);
 
     useEffect(() => {
-        console.log("vehicleTypes:", vehicleTypes);
+        // console.log("vehicleTypes:", vehicleTypes);
     }, [vehicleTypes]);
 
     return (
         <div className="dashboard-content p-3 md:p-4">
             <div className="flex items-center justify-between">
                 <p className="mb-4 pt-4 text-[24px] font-medium">Pricing Management</p>
-                <button onClick={openAddModal} className="flex items-center gap-2 rounded-md bg-primary-500 px-4 py-2 text-white hover:bg-primary-600">
+                <button
+                    onClick={openAddModal}
+                    className="flex items-center gap-2 rounded-md bg-primary-500 px-4 py-2 text-white hover:bg-primary-600"
+                >
                     <Plus size={16} />
                     Add New Pricing
                 </button>
@@ -285,9 +293,15 @@ const PricingManagement = () => {
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
                             {table.getRowModel().rows.map((row) => (
-                                <tr key={row.id} className="hover:bg-gray-50">
+                                <tr
+                                    key={row.id}
+                                    className="hover:bg-gray-50"
+                                >
                                     {row.getVisibleCells().map((cell) => (
-                                        <td key={cell.id} className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                                        <td
+                                            key={cell.id}
+                                            className="whitespace-nowrap px-6 py-4 text-sm text-gray-900"
+                                        >
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                         </td>
                                     ))}
@@ -303,14 +317,23 @@ const PricingManagement = () => {
                 <div className="mt-4 flex items-center justify-between">
                     <div>
                         <span className="text-sm text-gray-700 dark:text-white">
-                            Showing <span className="font-medium">{table.getRowModel().rows.length}</span> of <span className="font-medium">{filteredPricing.length}</span> results
+                            Showing <span className="font-medium">{table.getRowModel().rows.length}</span> of{" "}
+                            <span className="font-medium">{filteredPricing.length}</span> results
                         </span>
                     </div>
                     <div className="flex space-x-2">
-                        <button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()} className="rounded-md border px-3 py-1 text-sm font-medium disabled:opacity-50">
+                        <button
+                            onClick={() => table.previousPage()}
+                            disabled={!table.getCanPreviousPage()}
+                            className="rounded-md border px-3 py-1 text-sm font-medium disabled:opacity-50"
+                        >
                             Previous
                         </button>
-                        <button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()} className="rounded-md border px-3 py-1 text-sm font-medium disabled:opacity-50">
+                        <button
+                            onClick={() => table.nextPage()}
+                            disabled={!table.getCanNextPage()}
+                            className="rounded-md border px-3 py-1 text-sm font-medium disabled:opacity-50"
+                        >
                             Next
                         </button>
                     </div>
@@ -318,24 +341,38 @@ const PricingManagement = () => {
             </div>
 
             {/* Pricing Form Modal */}
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+            >
                 <div className="space-y-6">
-                    <h3 className="text-xl font-bold text-center">{isEditMode ? "Edit Pricing" : "Add New Pricing"}</h3>
+                    <h3 className="text-center text-xl font-bold">{isEditMode ? "Edit Pricing" : "Add New Pricing"}</h3>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="space-y-4"
+                    >
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-white">Vehicle Type</label>
                             <select
                                 name="vehicleType"
                                 value={formData.vehicleType}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full rounded-md border dark:text-gray-700 border-gray-300 py-2 px-3 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 dark:text-gray-700 sm:text-sm"
                                 required
                                 disabled={isEditMode}
                             >
-                                <option className="dark:text-gray-700" value="">Select Vehicle Type</option>
+                                <option
+                                    className="dark:text-gray-700"
+                                    value=""
+                                >
+                                    Select Vehicle Type
+                                </option>
                                 {vehicleTypes.map((type) => (
-                                    <option key={type._id} value={type._id}>
+                                    <option
+                                        key={type._id}
+                                        value={type._id}
+                                    >
                                         {type.name}
                                     </option>
                                 ))}
@@ -349,7 +386,7 @@ const PricingManagement = () => {
                                 name="pricePerKm"
                                 value={formData.pricePerKm}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full rounded-md border dark:text-gray-700 border-gray-300 py-2 px-3 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 dark:text-gray-700 sm:text-sm"
                                 required
                                 min="0"
                                 step="0.01"
@@ -363,24 +400,39 @@ const PricingManagement = () => {
                                 name="keroCommission"
                                 value={formData.keroCommission}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full rounded-md border dark:text-gray-700  border-gray-300 py-2 px-3 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 dark:text-gray-700 sm:text-sm"
                                 required
                                 min="0"
                                 step="0.01"
                             />
                         </div>
 
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-white">Lagos Commission (₦)</label>
+                            <input
+                                type="number"
+                                name="lagosCommission"
+                                value={formData.lagosCommission}
+                                onChange={handleInputChange}
+                                className="mt-1 block w-full cursor-not-allowed rounded-md border border-gray-300 bg-gray-100 px-3 py-2 shadow-sm dark:text-gray-700 sm:text-sm"
+                                disabled
+                                min="0"
+                                step="0.01"
+                            />
+                            <p className="mt-1 text-xs text-gray-500">Lagos Commission is fixed at ₦30</p>
+                        </div>
+
                         <div className="flex justify-end space-x-3 pt-4">
                             <button
                                 type="button"
                                 onClick={() => setIsModalOpen(false)}
-                                className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700  shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
-                                className="rounded-md border border-transparent bg-primary-500 dark:bg-secondary-500 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                className="rounded-md border border-transparent bg-primary-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-secondary-500"
                             >
                                 {isEditMode ? "Update" : "Create"}
                             </button>

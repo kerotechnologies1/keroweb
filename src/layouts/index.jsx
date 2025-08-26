@@ -3,8 +3,14 @@ import { Header } from "./header";
 import { AppSidebar } from "./sidebar";
 import { Outlet } from "react-router-dom";
 import { useMediaQuery } from "react-responsive";
+import { defaultMenuItems, lagosMenuItems } from "@/constants/sidebar";
 
-export const Layout = () => {
+export const Layout = ({
+    location = "default", // "default" | "lagos"
+    title = "Kero Admin",
+    email = "kero@gmail.com",
+    logo,
+}) => {
     const [toggled, setToggled] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
     const [isHovering, setIsHovering] = useState(false);
@@ -14,19 +20,19 @@ export const Layout = () => {
 
     useEffect(() => {
         if (isMobile) {
-            setCollapsed(false); // Always show full sidebar when toggled on mobile
+            setCollapsed(false);
         } else if (isTablet) {
-            setCollapsed(true); // Start collapsed on tablet
+            setCollapsed(true);
         } else {
-            setCollapsed(false); // Always expanded on desktop
+            setCollapsed(false);
         }
     }, [isMobile, isTablet]);
 
     const toggleSidebar = () => {
         if (isMobile) {
-            setToggled(!toggled); // Toggle overlay on mobile
+            setToggled(!toggled);
         } else if (isTablet) {
-            setCollapsed(!collapsed); // Toggle collapse on tablet
+            setCollapsed(!collapsed);
         }
     };
 
@@ -44,6 +50,9 @@ export const Layout = () => {
         }
     };
 
+    // Pick menu items based on location
+    const menuItems = location === "lagos" ? lagosMenuItems : defaultMenuItems;
+
     return (
         <div className="flex min-h-screen flex-col bg-gray-50">
             {/* Fixed Header */}
@@ -52,9 +61,8 @@ export const Layout = () => {
             </div>
 
             <div className="flex h-screen pt-16">
-                {/* Sidebar - Different behavior based on screen size */}
+                {/* Sidebar */}
                 {isMobile ? (
-                    /* Mobile - Offcanvas overlay */
                     <div
                         className={`fixed inset-0 z-40 bg-black bg-opacity-50 transition-opacity duration-300 ${
                             toggled ? "visible opacity-100" : "invisible opacity-0"
@@ -71,14 +79,17 @@ export const Layout = () => {
                         >
                             <AppSidebar
                                 toggled={toggled}
-                                collapsed={false} // Always expanded on mobile when visible
+                                collapsed={false}
                                 handleToggleSidebar={setToggled}
                                 handleCollapsedChange={setCollapsed}
+                                menuItems={menuItems}
+                                title={title}
+                                email={email}
+                                logo={logo}
                             />
                         </div>
                     </div>
                 ) : (
-                    /* Tablet/Desktop - Fixed sidebar */
                     <div
                         ref={sidebarRef}
                         onMouseEnter={handleMouseEnter}
@@ -90,18 +101,20 @@ export const Layout = () => {
                             collapsed={collapsed}
                             handleToggleSidebar={setToggled}
                             handleCollapsedChange={setCollapsed}
+                            menuItems={menuItems}
+                            title={title}
+                            email={email}
+                            logo={logo}
                         />
                     </div>
                 )}
 
-                {/* Content Area */}
+                {/* Content */}
                 <div
                     className={`flex-1 overflow-y-auto bg-[#F4F4F4] transition-all duration-300 ${
                         isMobile ? "ml-0" : collapsed ? "ml-[70px]" : "ml-[250px]"
                     }`}
-                    style={{
-                        height: "calc(100vh - 64px)",
-                    }}
+                    style={{ height: "calc(100vh - 64px)" }}
                 >
                     <div className="p-4 md:p-6">
                         <Outlet />

@@ -1,15 +1,18 @@
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import { flexRender, getCoreRowModel, getPaginationRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
-import { CheckCircle, Clock, XCircle, Search, MapPin, ChevronUp, ChevronDown, DollarSign, Navigation } from "lucide-react";
+import { CheckCircle, Clock, XCircle, Search, MapPin, ChevronUp, ChevronDown, Navigation } from "lucide-react";
 import Modal from "@/components/modal";
 import RideStatCard from "@/components/RideStatCard";
 import api from "@/utils/api";
 import RideMap from "@/components/RideMap";
 
-
-
-const Rides = () => {
+const Rides = ({ 
+    showKeroCommission = true, 
+    showLagosCommission = true, 
+    showFare = true, 
+    showRideId = true 
+}) => {
     const [rides, setRides] = useState([]);
     const [filteredRides, setFilteredRides] = useState([]);
     const [sorting, setSorting] = useState([]);
@@ -29,7 +32,7 @@ const Rides = () => {
         const loadingToast = toast.loading("Fetching rides data...");
         try {
             const response = await api.get("/admin/get-all-trips");
-            console.log(response.data)
+            // console.log(response.data)
             setRides(response.data.trips);
             setStats({
                 totalTrips: response.data.totalTrips,
@@ -129,86 +132,124 @@ const Rides = () => {
     );
 
     const columns = useMemo(
-        () => [
-            {
-                accessorKey: "id",
-                header: "S/N",
-                cell: ({ row }) => row.index + 1,
-                enableSorting: false, // Disable sorting for this column
-            },
-            {
-                accessorKey: "rideId",
-                header: "Ride ID",
-                cell: (info) => info.getValue().slice(0, 8) + "...",
-            },
-            {
-                accessorKey: "driverName",
-                header: "Driver",
-                cell: (info) => info.getValue() || "N/A",
-            },
-            {
-                accessorKey: "riderName",
-                header: "Rider",
-                cell: (info) => info.getValue() || "N/A",
-            },
-            {
-                accessorKey: "distance",
-                header: "Distance (m)",
-                cell: (info) => info.getValue().toLocaleString(),
-            },
-            {
-                accessorKey: "fare",
-                header: "Fare (₦)",
-                cell: (info) => `₦${parseFloat(info.getValue()).toFixed(2)}`,
-            },
-            {
-                accessorKey: "status",
-                header: "Status",
-                cell: (info) => {
-                    const status = info.getValue();
-                    let bgColor, textColor;
+        () => {
+            const baseColumns = [
+                {
+                    accessorKey: "id",
+                    header: "S/N",
+                    cell: ({ row }) => row.index + 1,
+                    enableSorting: false,
+                }
+            ];
 
-                    switch (status) {
-                        case "completed":
-                            bgColor = "bg-green-100";
-                            textColor = "text-green-800";
-                            break;
-                        case "pending":
-                            bgColor = "bg-yellow-100";
-                            textColor = "text-yellow-800";
-                            break;
-                        case "cancelled":
-                        case "rejected":
-                            bgColor = "bg-red-100";
-                            textColor = "text-red-800";
-                            break;
-                        default:
-                            bgColor = "bg-gray-100";
-                            textColor = "text-gray-800";
-                    }
+            // Conditionally add Ride ID column
+            if (showRideId) {
+                baseColumns.push({
+                    accessorKey: "rideId",
+                    header: "Ride ID",
+                    cell: (info) => info.getValue().slice(0, 8) + "...",
+                });
+            }
 
-                    return (
-                        <span className={`rounded-full px-2 py-1 text-xs ${bgColor} ${textColor}`}>
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </span>
-                    );
+            // Add Driver and Rider columns
+            baseColumns.push(
+                {
+                    accessorKey: "driverName",
+                    header: "Driver",
+                    cell: (info) => info.getValue() || "N/A",
                 },
-            },
-            {
-                id: "actions",
-                header: "Actions",
-                cell: ({ row }) => (
-                    <button
-                        onClick={() => openRideModal(row.original)}
-                        className="rounded-md bg-secondary-500 px-3 py-1 text-white transition hover:bg-secondary-600"
-                    >
-                        Details
-                    </button>
-                ),
-                enableSorting: false, // Disable sorting for this column
-            },
-        ],
-        [],
+                {
+                    accessorKey: "riderName",
+                    header: "Rider",
+                    cell: (info) => info.getValue() || "N/A",
+                },
+                {
+                    accessorKey: "distance",
+                    header: "Distance (m)",
+                    cell: (info) => info.getValue().toLocaleString(),
+                }
+            );
+
+            // Conditionally add Fare column
+            if (showFare) {
+                baseColumns.push({
+                    accessorKey: "fare",
+                    header: "Fare (₦)",
+                    cell: (info) => `₦${parseFloat(info.getValue()).toFixed(2)}`,
+                });
+            }
+
+            // Conditionally add Kero Commission column
+            if (showKeroCommission) {
+                baseColumns.push({
+                    accessorKey: "keroCommission",
+                    header: "Kero Commission (₦)",
+                    cell: (info) => `₦${parseFloat(info.getValue() || 0).toFixed(2)}`,
+                });
+            }
+
+            // Conditionally add Lagos Commission column
+            if (showLagosCommission) {
+                baseColumns.push({
+                    accessorKey: "lagosCommission",
+                    header: "Lagos Commission (₦)",
+                    cell: (info) => `₦${parseFloat(info.getValue() || 0).toFixed(2)}`,
+                });
+            }
+
+            // Add Status and Actions columns
+            baseColumns.push(
+                {
+                    accessorKey: "status",
+                    header: "Status",
+                    cell: (info) => {
+                        const status = info.getValue();
+                        let bgColor, textColor;
+
+                        switch (status) {
+                            case "completed":
+                                bgColor = "bg-green-100";
+                                textColor = "text-green-800";
+                                break;
+                            case "pending":
+                                bgColor = "bg-yellow-100";
+                                textColor = "text-yellow-800";
+                                break;
+                            case "cancelled":
+                            case "rejected":
+                                bgColor = "bg-red-100";
+                                textColor = "text-red-800";
+                                break;
+                            default:
+                                bgColor = "bg-gray-100";
+                                textColor = "text-gray-800";
+                        }
+
+                        return (
+                            <span className={`rounded-full px-2 py-1 text-xs ${bgColor} ${textColor}`}>
+                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </span>
+                        );
+                    },
+                },
+                {
+                    id: "actions",
+                    header: "Actions",
+                    cell: ({ row }) => (
+                        <button
+                            onClick={() => openRideModal(row.original)}
+                            className="rounded-md bg-secondary-500 px-3 py-1 text-white transition hover:bg-secondary-600"
+                        >
+                            Details
+                        </button>
+                    ),
+                    enableSorting: false,
+                }
+            );
+
+            return baseColumns;
+        },
+        [showRideId, showFare, showKeroCommission, showLagosCommission],
     );
 
     const table = useReactTable({
@@ -216,13 +257,13 @@ const Rides = () => {
         columns,
         state: {
             globalFilter,
-            sorting, // Add sorting state
+            sorting,
         },
         onGlobalFilterChange: setGlobalFilter,
-        onSortingChange: setSorting, // Add sorting change handler
+        onSortingChange: setSorting,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
-        getSortedRowModel: getSortedRowModel(), // Add sorted row model
+        getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         initialState: {
             pagination: {
@@ -305,8 +346,8 @@ const Rides = () => {
                                         <th
                                             key={header.id}
                                             className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-                                            onClick={header.column.getToggleSortingHandler()} // Add click handler
-                                            style={{ cursor: header.column.getCanSort() ? "pointer" : "default" }} // Change cursor if sortable
+                                            onClick={header.column.getToggleSortingHandler()}
+                                            style={{ cursor: header.column.getCanSort() ? "pointer" : "default" }}
                                         >
                                             <div className="flex items-center">
                                                 {flexRender(header.column.columnDef.header, header.getContext())}
@@ -380,10 +421,23 @@ const Rides = () => {
 
                         <div className="grid grid-cols-1 gap-6">
                             <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-sm">Ride ID</p>
-                                    <p className="text-md font-mono">{selectedRide.rideId}</p>
-                                </div>
+                                {/* Driver Selfie */}
+                                {selectedRide.driverSelfie && (
+                                    <div className="flex flex-col items-center space-y-2">
+                                        <img 
+                                            src={selectedRide.driverSelfie} 
+                                            alt="Driver Selfie" 
+                                            className="h-20 w-20 rounded-full object-cover border-2 border-gray-300"
+                                        />
+                                    </div>
+                                )}
+
+                                {showRideId && (
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm">Ride ID</p>
+                                        <p className="text-md font-mono">{selectedRide.rideId}</p>
+                                    </div>
+                                )}
 
                                 <div className="flex items-center justify-between">
                                     <p className="text-sm">Driver</p>
@@ -397,12 +451,12 @@ const Rides = () => {
 
                                 <div className="flex items-center justify-between">
                                     <p className="text-sm">Start Location</p>
-                                    <p className="text-md">{selectedRide.startLocation.address || "N/A"}</p>
+                                    <p className="text-md">{selectedRide.startAddress || "N/A"}</p>
                                 </div>
 
                                 <div className="flex items-center justify-between">
                                     <p className="text-sm">End Location</p>
-                                    <p className="text-md">{selectedRide.startLocation.address || "N/A"}</p>
+                                    <p className="text-md">{selectedRide.endAddress || "N/A"}</p>
                                 </div>
 
                                 <div className="flex items-center justify-between">
@@ -413,12 +467,32 @@ const Rides = () => {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between">
-                                    <p className="text-sm">Fare</p>
-                                    <div className="flex items-center gap-1">
-                                        <p className="text-md">₦{parseFloat(selectedRide.fare).toFixed(2)}</p>
+                                {showFare && (
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm">Fare</p>
+                                        <div className="flex items-center gap-1">
+                                            <p className="text-md">₦{parseFloat(selectedRide.fare).toFixed(2)}</p>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
+
+                                {showKeroCommission && (
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm">Kero Commission</p>
+                                        <div className="flex items-center gap-1">
+                                            <p className="text-md">₦{parseFloat(selectedRide.keroCommission || 0).toFixed(2)}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {showLagosCommission && (
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm">Lagos Commission</p>
+                                        <div className="flex items-center gap-1">
+                                            <p className="text-md">₦{parseFloat(selectedRide.lagosCommission || 0).toFixed(2)}</p>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="flex items-center justify-between">
                                     <p className="text-sm">Status</p>
@@ -434,10 +508,17 @@ const Rides = () => {
                                         {selectedRide.status.charAt(0).toUpperCase() + selectedRide.status.slice(1)}
                                     </span>
                                 </div>
+
+                                {selectedRide.rating && (
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm">Rating</p>
+                                        <div className="flex items-center gap-1">
+                                            <p className="text-md">{selectedRide.rating}/5 ⭐</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
-
-                        
 
                         <div className="border-t pt-4 text-center">
                             <h4 className="mb-2 font-medium">Additional Information</h4>

@@ -1,16 +1,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import { flexRender, getCoreRowModel, getPaginationRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
-import { User, UserCheck, UserX, FileCheck,  ChevronUp, ChevronDown, Search, Loader2, Star } from "lucide-react";
+import { User, UserCheck, UserX, FileCheck, ChevronUp, ChevronDown, Search, Loader2, Star, Mail } from "lucide-react";
 import Modal from "@/components/modal";
 import RideStatCard from "@/components/RideStatCard";
 import api from "@/utils/api";
 
-const Drivers = () => {
+const Drivers = ({ showReview = true, showWalletBalance = true }) => {
     const [drivers, setDrivers] = useState([]);
     const [filteredDrivers, setFilteredDrivers] = useState([]);
-	const [sorting, setSorting] = useState([]);
-    const [activeTab, setActiveTab] = useState("kycVerified"); // 'kycVerified', 'fullyVerified', 'kycUnverified'
+    const [sorting, setSorting] = useState([]);
+    const [activeTab, setActiveTab] = useState("emailUnverified"); // 'emailUnverified', 'emailVerified', 'kycSubmitted', 'kycApproved'
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDriver, setSelectedDriver] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -20,8 +20,9 @@ const Drivers = () => {
         const loadingToast = toast.loading("Fetching drivers data...");
         try {
             const response = await api.get("/admin/drivers/");
+            // console.log(response.data.data);
             setDrivers(response.data.data.drivers);
-            filterDrivers(response.data.data.drivers, "kycVerified");
+            filterDrivers(response.data.data.drivers, "emailUnverified");
             toast.update(loadingToast, {
                 render: "Drivers data loaded",
                 type: "success",
@@ -39,12 +40,18 @@ const Drivers = () => {
     };
 
     const filterDrivers = (driversList, tab) => {
-        if (tab === "fullyVerified") {
-            setFilteredDrivers(driversList.filter((driver) => driver.kycVerified && driver.isVerified));
-        } else if (tab === "kycVerified") {
-            setFilteredDrivers(driversList.filter((driver) => driver.kycVerified && !driver.isVerified));
-        } else {
-            setFilteredDrivers(driversList.filter((driver) => !driver.kycVerified));
+        if (tab === "emailUnverified") {
+            // Not email verified
+            setFilteredDrivers(driversList.filter((driver) => !driver.isVerified));
+        } else if (tab === "emailVerified") {
+            // Email verified but KYC not submitted
+            setFilteredDrivers(driversList.filter((driver) => driver.isVerified && !driver.kycSubmitted));
+        } else if (tab === "kycSubmitted") {
+            // Email verified, KYC submitted but not approved
+            setFilteredDrivers(driversList.filter((driver) => driver.isVerified && driver.kycSubmitted && !driver.kycVerified));
+        } else if (tab === "kycApproved") {
+            // All steps completed: email verified, KYC submitted and approved
+            setFilteredDrivers(driversList.filter((driver) => driver.isVerified && driver.kycSubmitted && driver.kycVerified));
         }
         setActiveTab(tab);
     };
@@ -71,9 +78,10 @@ const Drivers = () => {
     // Stats calculation
     const stats = useMemo(() => {
         const total = drivers.length;
-        const fullyVerified = drivers.filter((driver) => driver.isVerified && driver.kycVerified).length;
-        const kycVerified = drivers.filter((driver) => driver.kycVerified && !driver.isVerified).length;
-        const kycUnverified = drivers.filter((driver) => !driver.kycVerified).length;
+        const emailUnverified = drivers.filter((driver) => !driver.isVerified).length;
+        const emailVerified = drivers.filter((driver) => driver.isVerified && !driver.kycSubmitted).length;
+        const kycSubmitted = drivers.filter((driver) => driver.isVerified && driver.kycSubmitted && !driver.kycVerified).length;
+        const kycApproved = drivers.filter((driver) => driver.isVerified && driver.kycSubmitted && driver.kycVerified).length;
 
         return [
             {
@@ -89,20 +97,32 @@ const Drivers = () => {
                 iconBgColor: "bg-[#605D55]",
             },
             {
-                title: "Fully Verified",
-                value: fullyVerified,
+                title: "Email Unverified",
+                value: emailUnverified,
                 comparison: "0",
                 icon: (
-                    <UserCheck
+                    <UserX
                         size={16}
                         color="white"
                     />
                 ),
-                iconBgColor: "bg-[#258D3F]",
+                iconBgColor: "bg-[#dc2626]",
             },
             {
-                title: "KYC Verified",
-                value: kycVerified,
+                title: "Email Verified",
+                value: emailVerified,
+                comparison: "0",
+                icon: (
+                    <Mail
+                        size={16}
+                        color="white"
+                    />
+                ),
+                iconBgColor: "bg-[#f59e0b]",
+            },
+            {
+                title: "KYC Submitted",
+                value: kycSubmitted,
                 comparison: "0",
                 icon: (
                     <FileCheck
@@ -113,27 +133,102 @@ const Drivers = () => {
                 iconBgColor: "bg-[#3b82f6]",
             },
             {
-                title: "KYC Unverified",
-                value: kycUnverified,
+                title: "KYC Approved",
+                value: kycApproved,
                 comparison: "0",
                 icon: (
-                    <UserX
+                    <UserCheck
                         size={16}
                         color="white"
                     />
                 ),
-                iconBgColor: "bg-[#856833]",
+                iconBgColor: "bg-[#258D3F]",
             },
         ];
     }, [drivers]);
 
-    const fullyVerifiedColumns = useMemo(
+    const emailUnverifiedColumns = useMemo(
         () => [
             {
                 accessorKey: "id",
                 header: "S/N",
                 cell: ({ row }) => row.index + 1,
-				enableSorting: false,
+                enableSorting: false,
+            },
+            {
+                accessorKey: "firstname",
+                header: "Driver Name",
+                cell: (info) => `${info.getValue()} ${info.row.original.lastname || ""}`,
+            },
+            {
+                accessorKey: "email",
+                header: "Email Address",
+            },
+            {
+                accessorKey: "phone",
+                header: "Phone No",
+            },
+            {
+                accessorKey: "createdAt",
+                header: "Registration Date",
+                cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+            },
+            {
+                accessorKey: "isVerified",
+                header: "Status",
+                cell: () => <span className="rounded-full bg-red-100 px-2 py-1 text-xs text-red-800">Email Unverified</span>,
+            },
+        ],
+        [],
+    );
+
+    const emailVerifiedColumns = useMemo(
+        () => [
+            {
+                accessorKey: "id",
+                header: "S/N",
+                cell: ({ row }) => row.index + 1,
+                enableSorting: false,
+            },
+            {
+                accessorKey: "firstname",
+                header: "Driver Name",
+                cell: (info) => `${info.getValue()} ${info.row.original.lastname || ""}`,
+            },
+            {
+                accessorKey: "email",
+                header: "Email Address",
+            },
+            {
+                accessorKey: "phone",
+                header: "Phone No",
+            },
+            {
+                accessorKey: "vehicle.licensePlate",
+                header: "Vehicle No",
+                cell: (info) => info.getValue() || "Not provided",
+            },
+            {
+                accessorKey: "vehicle.model",
+                header: "Vehicle Type",
+                cell: (info) => (info.getValue() ? `${info.getValue()} ${info.row.original.vehicle?.year || ""}` : "Not provided"),
+            },
+            {
+                accessorKey: "kycSubmitted",
+                header: "KYC Status",
+                cell: () => <span className="rounded-full bg-red-100 px-2 py-1 text-xs text-red-800">Not Submitted</span>,
+            },
+        ],
+        [],
+    );
+
+    const kycSubmittedColumns = useMemo(
+        () => [
+            {
+                accessorKey: "id",
+                header: "S/N",
+                cell: ({ row }) => row.index + 1,
+                enableSorting: false,
             },
             {
                 accessorKey: "vehicle.licensePlate",
@@ -142,7 +237,58 @@ const Drivers = () => {
             {
                 accessorKey: "vehicle.model",
                 header: "Vehicle Type",
-                cell: (info) => `${info.getValue()} ${info.row.original.vehicle?.year || ""}`,
+                cell: (info) => `${info.getValue() || 'N/A'} ${info.row.original.vehicle?.year || ""}`,
+            },
+            {
+                accessorKey: "firstname",
+                header: "Driver Name",
+                cell: (info) => `${info.getValue()} ${info.row.original.lastname || ""}`,
+            },
+            {
+                accessorKey: "email",
+                header: "Email Address",
+            },
+            {
+                accessorKey: "phone",
+                header: "Phone No",
+            },
+            {
+                accessorKey: "kycVerified",
+                header: "KYC Status",
+                cell: () => <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs text-yellow-800">On Review</span>,
+            },
+            ...(showReview ? [{
+                id: "actions",
+                header: "Actions",
+                cell: ({ row }) => (
+                    <button
+                        onClick={() => openDriverModal(row.original)}
+                        className="rounded-md bg-secondary-500 px-3 py-1 text-white transition hover:bg-secondary-600"
+                    >
+                        Review
+                    </button>
+                ),
+            }] : []),
+        ],
+        [showReview],
+    );
+
+    const kycApprovedColumns = useMemo(
+        () => [
+            {
+                accessorKey: "id",
+                header: "S/N",
+                cell: ({ row }) => row.index + 1,
+                enableSorting: false,
+            },
+            {
+                accessorKey: "vehicle.licensePlate",
+                header: "Vehicle No",
+            },
+            {
+                accessorKey: "vehicle.model",
+                header: "Vehicle Type",
+                cell: (info) => `${info.getValue() || 'N/A'} ${info.row.original.vehicle?.year || ""}`,
             },
             {
                 accessorKey: "firstname",
@@ -172,128 +318,27 @@ const Drivers = () => {
                     </div>
                 ),
             },
-            {
-                accessorKey: "earnings",
-                header: "Earning",
+            ...(showWalletBalance ? [{
+                accessorKey: "walletBalance",
+                header: "Wallet Balance",
                 cell: (info) => `₦${parseFloat(info.getValue() || 0).toFixed(2)}`,
-            },
-        ],
-        [],
-    );
-
-    const kycVerifiedColumns = useMemo(
-        () => [
-            {
-                accessorKey: "id",
-                header: "S/N",
-                cell: ({ row }) => row.index + 1,
-				enableSorting: false,
-            },
-            {
-                accessorKey: "vehicle.licensePlate",
-                header: "Vehicle No",
-            },
-            {
-                accessorKey: "vehicle.model",
-                header: "Vehicle Type",
-                cell: (info) => `${info.getValue()} ${info.row.original.vehicle?.year || ""}`,
-            },
-            {
-                accessorKey: "firstname",
-                header: "Driver Name",
-                cell: (info) => `${info.getValue()} ${info.row.original.lastname || ""}`,
-            },
-            {
-                accessorKey: "email",
-                header: "Email Address",
-            },
-            {
-                accessorKey: "phone",
-                header: "Phone No",
-            },
-            {
-                accessorKey: "vehicle.inspectionStatus",
-                header: "Vehicle Inspection",
-                cell: (info) => (
-                    <span
-                        className={`rounded-full px-2 py-1 text-xs ${
-                            info.getValue() === "approved"
-                                ? "bg-green-100 text-green-800"
-                                : info.getValue() === "pending"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-red-100 text-red-800"
-                        }`}
-                    >
-                        {info.getValue() || "Not inspected"}
-                    </span>
-                ),
-            },
-            {
-                id: "actions",
-                header: "Actions",
-                cell: ({ row }) => (
-                    <button
-                        onClick={() => openDriverModal(row.original)}
-                        className="rounded-md bg-secondary-500 px-3 py-1 text-white transition hover:bg-secondary-600"
-                    >
-                        Review
-                    </button>
-                ),
-            },
-        ],
-        [],
-    );
-
-    const kycUnverifiedColumns = useMemo(
-        () => [
-            {
-                accessorKey: "id",
-                header: "S/N",
-                cell: ({ row }) => row.index + 1,
-				enableSorting: false,
-            },
-            {
-                accessorKey: "firstname",
-                header: "Driver Name",
-                cell: (info) => `${info.getValue()} ${info.row.original.lastname || ""}`,
-            },
-            {
-                accessorKey: "email",
-                header: "Email Address",
-            },
-            {
-                accessorKey: "phone",
-                header: "Phone No",
-            },
-            {
-                accessorKey: "vehicle.licensePlate",
-                header: "Vehicle No",
-                cell: (info) => info.getValue() || "Not provided",
-            },
-            {
-                accessorKey: "vehicle.model",
-                header: "Vehicle Type",
-                cell: (info) => (info.getValue() ? `${info.getValue()} ${info.row.original.vehicle?.year || ""}` : "Not provided"),
-            },
-            {
-                accessorKey: "kycStatus",
-                header: "KYC Status",
-                cell: () => <span className="rounded-full bg-red-100 px-2 py-1 text-xs text-red-800">Not Submitted</span>,
-            },
+            }] : []),
         ],
         [],
     );
 
     const getColumns = () => {
         switch (activeTab) {
-            case "fullyVerified":
-                return fullyVerifiedColumns;
-            case "kycVerified":
-                return kycVerifiedColumns;
-            case "kycUnverified":
-                return kycUnverifiedColumns;
+            case "emailUnverified":
+                return emailUnverifiedColumns;
+            case "emailVerified":
+                return emailVerifiedColumns;
+            case "kycSubmitted":
+                return kycSubmittedColumns;
+            case "kycApproved":
+                return kycApprovedColumns;
             default:
-                return fullyVerifiedColumns;
+                return emailUnverifiedColumns;
         }
     };
 
@@ -302,13 +347,13 @@ const Drivers = () => {
         columns: getColumns(),
         state: {
             globalFilter,
-			sorting, // Add sorting state
+            sorting,
         },
         onGlobalFilterChange: setGlobalFilter,
-		onSortingChange: setSorting, // Add sorting change handler
-		getCoreRowModel: getCoreRowModel(),
-		getFilteredRowModel: getFilteredRowModel(),
-		getSortedRowModel: getSortedRowModel(), // Add sorted row model
+        onSortingChange: setSorting,
+        getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         initialState: {
             pagination: {
@@ -323,12 +368,14 @@ const Drivers = () => {
 
     const getTabLabel = (tab) => {
         switch (tab) {
-            case "fullyVerified":
-                return "Fully Verified";
-            case "kycVerified":
-                return "KYC Verified";
-            case "kycUnverified":
-                return "KYC Unverified";
+            case "emailUnverified":
+                return "Email Unverified";
+            case "emailVerified":
+                return "Email Verified";
+            case "kycSubmitted":
+                return "KYC Submitted";
+            case "kycApproved":
+                return "KYC Approved";
             default:
                 return tab;
         }
@@ -339,7 +386,7 @@ const Drivers = () => {
             <p className="mb-4 pt-4 text-[24px] font-medium">Drivers</p>
 
             {/* Stats Cards */}
-            <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-4">
+            <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-5">
                 {stats.map((stat, index) => (
                     <RideStatCard
                         key={index}
@@ -355,7 +402,7 @@ const Drivers = () => {
             <div className="rounded-lg bg-white p-6 shadow-sm">
                 <div className="mb-4 flex items-center justify-between">
                     <div className="flex space-x-2">
-                        {["kycVerified", "fullyVerified", "kycUnverified"].map((tab) => (
+                        {["emailUnverified", "emailVerified", "kycSubmitted", "kycApproved"].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => filterDrivers(drivers, tab)}
@@ -376,83 +423,88 @@ const Drivers = () => {
                         />
                     </div>
                 </div>
-            
-				<div
-					className="w-full overflow-x-auto"
-					style={{ maxHeight: "calc(100vh - 300px)" }}
-				>
-					<table className="w-full border-collapse">
-						<thead className="sticky top-0 bg-gray-50">
-							{table.getHeaderGroups().map((headerGroup) => (
-								<tr key={headerGroup.id}>
-									{headerGroup.headers.map((header) => (
-										<th
-											key={header.id}
-											className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-											onClick={header.column.getToggleSortingHandler()} // Add click handler
-											style={{ cursor: header.column.getCanSort() ? "pointer" : "default" }} // Change cursor if sortable
-										>
-											{flexRender(header.column.columnDef.header, header.getContext())}
-											{{
-												asc: <ChevronUp className="ml-1 h-4 w-4" />,
-												desc: <ChevronDown className="ml-1 h-4 w-4" />,
-											}[header.column.getIsSorted()] ?? null}
-										</th>
-									))}
-								</tr>
-							))}
-						</thead>
-						<tbody className="divide-y divide-gray-200 bg-white">
-							{table.getRowModel().rows.map((row) => (
-								<tr
-									key={row.id}
-									className="hover:bg-gray-50"
-								>
-									{row.getVisibleCells().map((cell) => (
-										<td
-											key={cell.id}
-											className="whitespace-nowrap px-6 py-4 text-sm text-gray-900"
-										>
-											{flexRender(cell.column.columnDef.cell, cell.getContext())}
-										</td>
-									))}
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
 
-				{filteredDrivers.length === 0 && <p className="p-4 text-center">No {getTabLabel(activeTab).toLowerCase()} drivers found</p>}
+                <div
+                    className="w-full overflow-x-auto"
+                    style={{ maxHeight: "calc(100vh - 300px)" }}
+                >
+                    <table className="w-full border-collapse">
+                        <thead className="sticky top-0 bg-gray-50">
+                            {table.getHeaderGroups().map((headerGroup) => (
+                                <tr key={headerGroup.id}>
+                                    {headerGroup.headers.map((header) => (
+                                        <th
+                                            key={header.id}
+                                            className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                                            onClick={header.column.getToggleSortingHandler()}
+                                            style={{ cursor: header.column.getCanSort() ? "pointer" : "default" }}
+                                        >
+                                            {flexRender(header.column.columnDef.header, header.getContext())}
+                                            {{
+                                                asc: <ChevronUp className="ml-1 h-4 w-4" />,
+                                                desc: <ChevronDown className="ml-1 h-4 w-4" />,
+                                            }[header.column.getIsSorted()] ?? null}
+                                        </th>
+                                    ))}
+                                </tr>
+                            ))}
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 bg-white">
+                            {table.getRowModel().rows.map((row) => (
+                                <tr
+                                    key={row.id}
+                                    className={`hover:bg-gray-50 ${
+                                        (activeTab === "emailUnverified" || activeTab === "emailVerified" || activeTab === "kycApproved") ? "cursor-pointer" : ""
+                                    }`}
+                                    onClick={() => {
+                                        // Only open modal on row click for non-review tabs
+                                        if (activeTab === "emailUnverified" || activeTab === "emailVerified" || activeTab === "kycApproved") {
+                                            openDriverModal(row.original);
+                                        }
+                                    }}
+                                >
+                                    {row.getVisibleCells().map((cell) => (
+                                        <td
+                                            key={cell.id}
+                                            className="whitespace-nowrap px-6 py-4 text-sm text-gray-900"
+                                        >
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
 
-				{/* Pagination */}
-				<div className="mt-4 flex items-center justify-between">
-					<div>
-						<span className="text-sm text-gray-700 dark:text-white">
-							Showing <span className="font-medium">{table.getRowModel().rows.length}</span> of{" "}
-							<span className="font-medium">{filteredDrivers.length}</span> results
-						</span>
-					</div>
-					<div className="flex space-x-2">
-						<button
-							onClick={() => table.previousPage()}
-							disabled={!table.getCanPreviousPage()}
-							className="rounded-md border px-3 py-1 text-sm font-medium disabled:opacity-50"
-						>
-							Previous
-						</button>
-						<button
-							onClick={() => table.nextPage()}
-							disabled={!table.getCanNextPage()}
-							className="rounded-md border px-3 py-1 text-sm font-medium disabled:opacity-50"
-						>
-							Next
-						</button>
-					</div>
-				</div>
+                {filteredDrivers.length === 0 && <p className="p-4 text-center">No {getTabLabel(activeTab).toLowerCase()} drivers found</p>}
 
+                {/* Pagination */}
+                <div className="mt-4 flex items-center justify-between">
+                    <div>
+                        <span className="text-sm text-gray-700 dark:text-white">
+                            Showing <span className="font-medium">{table.getRowModel().rows.length}</span> of{" "}
+                            <span className="font-medium">{filteredDrivers.length}</span> results
+                        </span>
+                    </div>
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={() => table.previousPage()}
+                            disabled={!table.getCanPreviousPage()}
+                            className="rounded-md border px-3 py-1 text-sm font-medium disabled:opacity-50"
+                        >
+                            Previous
+                        </button>
+                        <button
+                            onClick={() => table.nextPage()}
+                            disabled={!table.getCanNextPage()}
+                            className="rounded-md border px-3 py-1 text-sm font-medium disabled:opacity-50"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
             </div>
-
-
 
             {/* Verification Modal */}
             <Modal
@@ -517,45 +569,51 @@ const Drivers = () => {
                                 </div>
 
                                 <div className="flex items-center justify-between">
-                                    <p className="text-sm">Earning</p>
-                                    <p className="text-md">₦{parseFloat(selectedDriver.earnings || 0).toFixed(2)}</p>
+                                    <p className="text-sm">Wallet Balance</p>
+                                    <p className="text-md">₦{parseFloat(selectedDriver.walletBalance || 0).toFixed(2)}</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between">
-                            <p className="text-sm">Driver&apos;s License</p>
-                            {selectedDriver.vehicle?.driverLicense ? (
-                                <a
-                                    href={selectedDriver.vehicle.driverLicense}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-500 hover:underline"
-                                >
-                                    View Image
-                                </a>
-                            ) : (
-                                <p className="text-md">N/A</p>
-                            )}
-                        </div>
+                        {/* Only show document links if driver has submitted KYC */}
+                        {selectedDriver.kycSubmitted && (
+                            <>
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm">Driver&apos;s License</p>
+                                    {selectedDriver.vehicle?.driverLicense ? (
+                                        <a
+                                            href={selectedDriver.vehicle.driverLicense}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-500 hover:underline"
+                                        >
+                                            View Image
+                                        </a>
+                                    ) : (
+                                        <p className="text-md">N/A</p>
+                                    )}
+                                </div>
 
-                        <div className="flex items-center justify-between">
-                            <p className="text-sm">Hackney Permit</p>
-                            {selectedDriver.vehicle?.hackneyPermit ? (
-                                <a
-                                    href={selectedDriver.vehicle.hackneyPermit}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-500 hover:underline"
-                                >
-                                    View Image
-                                </a>
-                            ) : (
-                                <p className="text-md">N/A</p>
-                            )}
-                        </div>
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm">Hackney Permit</p>
+                                    {selectedDriver.vehicle?.hackneyPermit ? (
+                                        <a
+                                            href={selectedDriver.vehicle.hackneyPermit}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-500 hover:underline"
+                                        >
+                                            View Image
+                                        </a>
+                                    ) : (
+                                        <p className="text-md">N/A</p>
+                                    )}
+                                </div>
+                            </>
+                        )}
 
-                        {activeTab === "kycVerified" && (
+                        {/* Show review buttons only for KYC submitted drivers when showReview is true */}
+                        {showReview && activeTab === "kycSubmitted" && (
                             <div className="flex justify-center space-x-4 pt-6">
                                 <button
                                     type="button"

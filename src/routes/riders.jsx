@@ -2,10 +2,12 @@ import { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import { flexRender, getCoreRowModel, getPaginationRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
 import RideStatCard from "@/components/RideStatCard";
+import Modal from "@/components/modal";
 import api from "@/utils/api";
 import { User, UserCheck, UserX, ChevronUp, ChevronDown, Search } from "lucide-react";
+import { formatCurrency } from "@/utils/cn";
 
-const Riders = () => {
+const Riders = ({ showEmail = true, showPhone = true, showWalletBalance = true }) => {
     const [users, setUsers] = useState([]);
     const [stats, setStats] = useState({
         totalRiders: 0,
@@ -14,6 +16,8 @@ const Riders = () => {
         completedProfiles: 0,
     });
     const [globalFilter, setGlobalFilter] = useState("");
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
 
     const getRiders = async () => {
         const loadingToast = toast.loading("Fetching riders data...");
@@ -22,13 +26,14 @@ const Riders = () => {
             const userData = response.data.data.map((user) => ({
                 ...user,
                 fullname: user.fullname || "N/A",
-                email: user.email || "N/A",
-                phone: user.phone || "N/A",
+                email: showEmail ? user.email || "N/A" : "***@***.com",
+                phone: showPhone ? user.phone || "N/A" : "***********",
                 createdAt: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A",
-                walletBalance: `₦${parseFloat(user.walletBalance || 0).toFixed(2)}`,
+                walletBalance: showWalletBalance ? formatCurrency(user.walletBalance) : "₦***",
             }));
             setUsers(userData);
-            analyzeUserData(userData);
+            console.log(userData);
+            analyzeUserData(response.data.data); // Use original data for stats
             toast.update(loadingToast, {
                 render: "Riders data loaded",
                 type: "success",
@@ -58,8 +63,13 @@ const Riders = () => {
         });
     };
 
-    const columns = useMemo(
-        () => [
+    const handleRowClick = (user) => {
+        setSelectedUser(user);
+        setIsModalOpen(true);
+    };
+
+    const columns = useMemo(() => {
+        const baseColumns = [
             {
                 accessorKey: "id",
                 header: "S/N",
@@ -70,16 +80,27 @@ const Riders = () => {
                 header: "Name",
                 cell: (info) => info.getValue(),
             },
-            {
+        ];
+
+        // Conditionally add email column
+        if (showEmail) {
+            baseColumns.push({
                 accessorKey: "email",
                 header: "Email",
                 cell: (info) => info.getValue(),
-            },
-            {
+            });
+        }
+
+        // Conditionally add phone column
+        if (showPhone) {
+            baseColumns.push({
                 accessorKey: "phone",
                 header: "Phone",
                 cell: (info) => info.getValue(),
-            },
+            });
+        }
+
+        baseColumns.push(
             {
                 accessorKey: "isVerified",
                 header: "Verified",
@@ -102,19 +123,25 @@ const Riders = () => {
                     </span>
                 ),
             },
-            {
+        );
+
+        // Conditionally add wallet balance column
+        if (showWalletBalance) {
+            baseColumns.push({
                 accessorKey: "walletBalance",
                 header: "Balance",
                 cell: (info) => info.getValue(),
-            },
-            {
-                accessorKey: "createdAt",
-                header: "Joined Date",
-                cell: (info) => info.getValue(),
-            },
-        ],
-        [],
-    );
+            });
+        }
+
+        baseColumns.push({
+            accessorKey: "createdAt",
+            header: "Joined Date",
+            cell: (info) => info.getValue(),
+        });
+
+        return baseColumns;
+    }, [showEmail, showPhone, showWalletBalance]);
 
     const table = useReactTable({
         data: users,
@@ -131,7 +158,7 @@ const Riders = () => {
 
     useEffect(() => {
         getRiders();
-    }, []);
+    }, [showEmail, showPhone, showWalletBalance]);
 
     const riderStatsData = [
         {
@@ -245,7 +272,8 @@ const Riders = () => {
                                     {table.getRowModel().rows.map((row) => (
                                         <tr
                                             key={row.id}
-                                            className="hover:bg-gray-50"
+                                            className="cursor-pointer hover:bg-gray-50"
+                                            onClick={() => handleRowClick(row.original)}
                                         >
                                             {row.getVisibleCells().map((cell) => (
                                                 <td
@@ -266,14 +294,14 @@ const Riders = () => {
                                     <button
                                         onClick={() => table.previousPage()}
                                         disabled={!table.getCanPreviousPage()}
-                                        className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                        className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                                     >
                                         Previous
                                     </button>
                                     <button
                                         onClick={() => table.nextPage()}
                                         disabled={!table.getCanNextPage()}
-                                        className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                        className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                                     >
                                         Next
                                     </button>
@@ -293,7 +321,7 @@ const Riders = () => {
                                             <button
                                                 onClick={() => table.setPageIndex(0)}
                                                 disabled={!table.getCanPreviousPage()}
-                                                className="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50"
+                                                className="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                                             >
                                                 <span className="sr-only">First</span>
                                                 &laquo;
@@ -301,7 +329,7 @@ const Riders = () => {
                                             <button
                                                 onClick={() => table.previousPage()}
                                                 disabled={!table.getCanPreviousPage()}
-                                                className="relative inline-flex items-center border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50"
+                                                className="relative inline-flex items-center border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                                             >
                                                 <span className="sr-only">Previous</span>
                                                 &lsaquo;
@@ -309,7 +337,7 @@ const Riders = () => {
                                             <button
                                                 onClick={() => table.nextPage()}
                                                 disabled={!table.getCanNextPage()}
-                                                className="relative inline-flex items-center border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50"
+                                                className="relative inline-flex items-center border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                                             >
                                                 <span className="sr-only">Next</span>
                                                 &rsaquo;
@@ -317,7 +345,7 @@ const Riders = () => {
                                             <button
                                                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                                                 disabled={!table.getCanNextPage()}
-                                                className="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50"
+                                                className="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                                             >
                                                 <span className="sr-only">Last</span>
                                                 &raquo;
@@ -332,6 +360,118 @@ const Riders = () => {
                     )}
                 </div>
             </div>
+
+            {/* User Details Modal */}
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+            >
+                {selectedUser && (
+                    <div className="space-y-6">
+                        <h3 className="mb-6 text-center text-xl font-bold">Rider Details</h3>
+
+                        <div className="grid grid-cols-1 gap-6">
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm">Full Name</p>
+                                    <div className="flex items-center gap-2">
+                                        {selectedUser.profileImage ? (
+                                            <img
+                                                src={selectedUser.profileImage}
+                                                className="h-6 w-6 rounded-full object-cover"
+                                                alt="User"
+                                            />
+                                        ) : (
+                                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-300">
+                                                <User size={14} />
+                                            </div>
+                                        )}
+                                        <p className="text-md">{selectedUser.fullname}</p>
+                                    </div>
+                                </div>
+
+                                {showEmail && (
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm">Email Address</p>
+                                        <p className="text-md">{selectedUser.email}</p>
+                                    </div>
+                                )}
+
+                                {showPhone && (
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm">Phone Number</p>
+                                        <p className="text-md">{selectedUser.phone}</p>
+                                    </div>
+                                )}
+
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm">Verification Status</p>
+                                    <span
+                                        className={`rounded-full px-2 py-1 text-xs ${selectedUser.isVerified ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                                    >
+                                        {selectedUser.isVerified ? "Verified" : "Unverified"}
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm">Profile Status</p>
+                                    <span
+                                        className={`rounded-full px-2 py-1 text-xs ${selectedUser.isCompleted ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}
+                                    >
+                                        {selectedUser.isCompleted ? "Complete" : "Incomplete"}
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm">Passcode Set</p>
+                                    <span
+                                        className={`rounded-full px-2 py-1 text-xs ${selectedUser.isSetPassCode ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                                    >
+                                        {selectedUser.isSetPassCode ? "Yes" : "No"}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {showWalletBalance && (
+                                    <>
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-sm">Wallet Balance</p>
+                                            <p className="text-md">{formatCurrency(selectedUser.walletBalance)}</p>
+                                        </div>
+
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-sm">Bonus Balance</p>
+                                            <p className="text-md">{formatCurrency(selectedUser.bonusBalance)}</p>
+                                        </div>
+                                    </>
+                                )}
+
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm">Join Date</p>
+                                    <p className="text-md">{selectedUser.createdAt}</p>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm">Last Updated</p>
+                                    <p className="text-md">
+                                        {selectedUser.updatedAt ? new Date(selectedUser.updatedAt).toLocaleDateString() : "N/A"}
+                                    </p>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm">Account Status</p>
+                                    <span
+                                        className={`rounded-full px-2 py-1 text-xs ${!selectedUser.isDeleted ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                                    >
+                                        {!selectedUser.isDeleted ? "Active" : "Deleted"}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 };

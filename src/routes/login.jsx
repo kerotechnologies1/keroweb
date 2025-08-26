@@ -23,16 +23,27 @@ function Login() {
             localStorage.setItem("token", token);
             localStorage.setItem("admin", JSON.stringify(admin));
 
-            await Swal.fire({
-                icon: "success",
-                title: "Success",
-                text: response.data.message,
-                timer: 1500,
-                timerProgressBar: true,
-                showConfirmButton: false,
-            });
-
-            window.location.href = "/dashboard";
+            if (admin.role === "lagos") {
+                await Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: response.data.message,
+                    timer: 1500,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                });
+                window.location.href = "/dashboard/lagos";
+            } else {
+                await Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: response.data.message,
+                    timer: 1500,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                });
+                window.location.href = "/dashboard";
+            }
         } catch (error) {
             await Swal.fire({
                 icon: "error",
