@@ -1,8 +1,11 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import images from "@/assets/images";
+import { useState } from "react";
+import Modal from "@/components/modal";
 
 const HomePage = () => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
     return (
         <div className="bg-[#F4F4F4]">
             <div className="hero one min-h-screen">
@@ -21,12 +24,12 @@ const HomePage = () => {
                     <h1 className="mb-4 text-4xl font-medium text-white md:text-6xl lg:w-10/12">Experience the Future of Transportation</h1>
                     <p className="mb-6 text-lg text-white">Convenient, Affordable, and Safe Rides with Kero</p>
                     <div className="items-center gap-4 max-sm:space-y-3 md:flex">
-                        <a
-                            href="#"
+                        <button
+                            onClick={() => setIsModalOpen(true)}
                             className="inline-block rounded-md bg-primary-800 px-6 py-3 text-white md:inline"
                         >
                             Download App
-                        </a>
+                        </button>
                         <a
                             href="#"
                             className="inline-block rounded-md bg-white px-6 py-3 text-primary-600 md:inline"
@@ -56,12 +59,12 @@ const HomePage = () => {
                             <li>Real-time tracking and updates for a stress-free ride</li>
                             <li>Verified drivers for your safety and security</li>
                         </ul>
-                        <a
-                            href="#"
+                        <button
+                            onClick={() => setIsModalOpen(true)}
                             className="inline-block rounded-md bg-primary-600 px-6 py-3 text-white"
                         >
                             Download the App
-                        </a>
+                        </button>
                     </div>
                 </div>
             </section>
@@ -131,6 +134,53 @@ const HomePage = () => {
             </section>
 
             <Footer />
+
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+            >
+                <div className="space-y-4 text-center">
+                    <h3 className="mb-4 text-xl font-semibold">Download Kero Apps</h3>
+
+                    <div className="flex flex-col gap-3">
+                        {/* Rider */}
+                        <a
+                            href="https://play.google.com/store/apps/details?id=com.user.Kero"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block rounded-md bg-gray-100 px-4 py-2 font-medium text-primary-600 hover:bg-gray-200"
+                        >
+                            Rider - Google Play
+                        </a>
+                        <a
+                            href="https://apps.apple.com/ca/app/kero/id6745862049?uo=2"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block rounded-md bg-gray-100 px-4 py-2 font-medium text-primary-600 hover:bg-gray-200"
+                        >
+                            Rider - App Store
+                        </a>
+
+                        {/* Driver */}
+                        <a
+                            href="https://play.google.com/store/apps/details?id=com.driver.Kero"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block rounded-md bg-gray-100 px-4 py-2 font-medium text-primary-600 hover:bg-gray-200"
+                        >
+                            Driver - Google Play
+                        </a>
+                        <a
+                            href="https://apps.apple.com/ca/app/kero-driver/id6745798671"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block rounded-md bg-gray-100 px-4 py-2 font-medium text-primary-600 hover:bg-gray-200"
+                        >
+                            Driver - App Store
+                        </a>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };
