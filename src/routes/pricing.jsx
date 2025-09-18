@@ -106,28 +106,42 @@ const PricingManagement = () => {
 
     // Submit form (both add and edit)
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        const loadingToast = toast.loading(isEditMode ? "Updating pricing..." : "Creating new pricing...");
+      e.preventDefault();
+      const loadingToast = toast.loading(
+        isEditMode ? "Updating pricing..." : "Creating new pricing..."
+      );
 
-        try {
-            // Use POST for both create and update as per requirements
-            await api.post("/admin/pricing", formData);
-            toast.update(loadingToast, {
-                render: isEditMode ? "Pricing updated successfully" : "Pricing created successfully",
-                type: "success",
-                isLoading: false,
-                autoClose: 2000,
-            });
-            setIsModalOpen(false);
-            getPricing();
-        } catch (error) {
-            toast.update(loadingToast, {
-                render: error.response?.data?.message || "Error processing request",
-                type: "error",
-                isLoading: false,
-                autoClose: 2000,
-            });
+      try {
+        if (isEditMode && currentPricing?._id) {
+          // Update existing pricing
+          await api.put(`/admin/pricing/${currentPricing._id}`, formData);
+          toast.update(loadingToast, {
+            render: "Pricing updated successfully",
+            type: "success",
+            isLoading: false,
+            autoClose: 2000,
+          });
+        } else {
+          // Create new pricing
+          await api.post("/admin/pricing", formData);
+          toast.update(loadingToast, {
+            render: "Pricing created successfully",
+            type: "success",
+            isLoading: false,
+            autoClose: 2000,
+          });
         }
+
+        setIsModalOpen(false);
+        getPricing();
+      } catch (error) {
+        toast.update(loadingToast, {
+          render: error.response?.data?.message || "Error processing request",
+          type: "error",
+          isLoading: false,
+          autoClose: 2000,
+        });
+      }
     };
 
     // Delete pricing with confirmation
