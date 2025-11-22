@@ -15,6 +15,7 @@ import Settings from "./routes/setting";
 import Drivers from "./routes/drivers";
 import Transactions from "./routes/transactions";
 import PricingManagement from "./routes/pricing";
+import Rewards from "./routes/rewards";
 import PushNotifications from "./routes/push-notification";
 import HomePage from "./routes/homepage";
 import DriverTerms from "./routes/become-a-driver";
@@ -383,6 +384,11 @@ const router = createBrowserRouter([
                 path: "transactions",
                 element: <Transactions />,
             },
+            {
+                path: "rewards",
+                element: <Rewards />,
+            },
+
             {
                 path: "notifications",
                 element: <PushNotifications />,

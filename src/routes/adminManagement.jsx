@@ -18,7 +18,7 @@ const AdminUserManagement = () => {
         email: "",
         password: "",
         fullname: "",
-        isLagosRole: false,
+        role: "admin",
     });
     const [passwordData, setPasswordData] = useState({
         newPassword: "",
@@ -30,7 +30,6 @@ const AdminUserManagement = () => {
         const loadingToast = toast.loading("Fetching admin users...");
         try {
             const response = await api.get("/admin/adminusers/");
-            // console.log(response.data.data);
             setAdminUsers(response.data.data);
             setFilteredAdminUsers(response.data.data);
             toast.update(loadingToast, {
@@ -51,10 +50,10 @@ const AdminUserManagement = () => {
 
     // Handle form input changes
     const handleInputChange = (e) => {
-        const { name, value, type, checked } = e.target;
+        const { name, value } = e.target;
         setFormData({
             ...formData,
-            [name]: type === 'checkbox' ? checked : value,
+            [name]: value,
         });
     };
 
@@ -74,7 +73,7 @@ const AdminUserManagement = () => {
             email: "",
             password: "",
             fullname: "",
-            isLagosRole: false,
+            role: "admin",
         });
         setIsModalOpen(true);
     };
@@ -101,9 +100,9 @@ const AdminUserManagement = () => {
                 fullname: formData.fullname,
             };
 
-            // Add role if Lagos is selected
-            if (formData.isLagosRole) {
-                payload.role = "lagos";
+            // Add role if it's not the default admin role
+            if (formData.role !== "admin") {
+                payload.role = formData.role;
             }
 
             await api.post("/admin/register", payload);
@@ -164,8 +163,8 @@ const AdminUserManagement = () => {
             text: "You won't be able to revert this!",
             icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
             confirmButtonText: "Yes, delete it!",
         });
 
@@ -178,6 +177,26 @@ const AdminUserManagement = () => {
                 Swal.fire("Error!", error.response?.data?.message || "Failed to delete admin user", "error");
             }
         }
+    };
+
+    // Get role badge color
+    const getRoleBadgeColor = (role) => {
+        switch(role) {
+            case "lagos":
+                return "bg-blue-100 text-blue-800";
+            case "support":
+                return "bg-purple-100 text-purple-800";
+            case "finance":
+                return "bg-green-100 text-green-800";
+            default:
+                return "bg-gray-100 text-gray-800";
+        }
+    };
+
+    // Get role display name
+    const getRoleDisplayName = (role) => {
+        if (!role) return "Admin";
+        return role.charAt(0).toUpperCase() + role.slice(1);
     };
 
     // Table columns
@@ -205,12 +224,8 @@ const AdminUserManagement = () => {
                 cell: (info) => {
                     const role = info.getValue();
                     return (
-                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                            role === "lagos" 
-                                ? "bg-blue-100 text-blue-800" 
-                                : "bg-gray-100 text-gray-800"
-                        }`}>
-                            {role || "Admin"}
+                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getRoleBadgeColor(role)}`}>
+                            {getRoleDisplayName(role)}
                         </span>
                     );
                 },
@@ -417,17 +432,20 @@ const AdminUserManagement = () => {
                             />
                         </div>
 
-                        <div className="flex items-center">
-                            <input
-                                type="checkbox"
-                                name="isLagosRole"
-                                checked={formData.isLagosRole}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-white">Role</label>
+                            <select
+                                name="role"
+                                value={formData.role}
                                 onChange={handleInputChange}
-                                className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                            />
-                            <label className="ml-2 text-sm font-medium text-gray-700 dark:text-white">
-                                Lagos Role
-                            </label>
+                                className="mt-1 block w-full rounded-md border dark:text-gray-700 border-gray-300 py-2 px-3 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+                                required
+                            >
+                                <option value="admin">Admin</option>
+                                <option value="support">Support</option>
+                                <option value="finance">Finance</option>
+                                <option value="lagos">Lagos</option>
+                            </select>
                         </div>
 
                         <div className="flex justify-end space-x-3 pt-4">
