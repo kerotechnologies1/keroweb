@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import PropTypes from "prop-types";
 import { toast } from "react-toastify";
 import { flexRender, getCoreRowModel, getPaginationRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
 import { User, UserCheck, UserX, FileCheck, ChevronUp, ChevronDown, Search, Loader2, Star, Mail } from "lucide-react";
@@ -65,6 +66,20 @@ const Drivers = ({ showReview = true, showWalletBalance = true }) => {
             setIsModalOpen(false);
         } catch (error) {
             toast.error(error.response?.data?.message || "Error processing verification");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleUnverifyDriver = async (driverId) => {
+        setIsLoading(true);
+        try {
+            await api.put(`/admin/drivers/unverify/${driverId}`);
+            toast.success("Driver unapproved successfully");
+            getDrivers(); // Refresh the list
+            setIsModalOpen(false);
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Error unapproving driver");
         } finally {
             setIsLoading(false);
         }
@@ -331,8 +346,29 @@ const Drivers = ({ showReview = true, showWalletBalance = true }) => {
                       },
                   ]
                 : []),
+            ...(showReview
+                ? [
+                      {
+                          id: "actions",
+                          header: "Actions",
+                          cell: ({ row }) => (
+                              <button
+                                  onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (window.confirm("Are you sure you want to unapprove this driver?")) {
+                                          handleUnverifyDriver(row.original._id);
+                                      }
+                                  }}
+                                  className="rounded-md bg-red-500 px-3 py-1 text-white transition hover:bg-red-600"
+                              >
+                                  Unapprove
+                              </button>
+                          ),
+                      },
+                  ]
+                : []),
         ],
-        [],
+        [showWalletBalance, showReview],
     );
 
     const getColumns = () => {
@@ -477,6 +513,12 @@ const Drivers = ({ showReview = true, showWalletBalance = true }) => {
                                         <td
                                             key={cell.id}
                                             className="whitespace-nowrap px-6 py-4 text-sm text-gray-900"
+                                            onClick={(e) => {
+                                                // Prevent row click when clicking action buttons
+                                                if (cell.column.id === "actions") {
+                                                    e.stopPropagation();
+                                                }
+                                            }}
                                         >
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                         </td>
@@ -657,11 +699,39 @@ const Drivers = ({ showReview = true, showWalletBalance = true }) => {
                                 </button>
                             </div>
                         )}
+
+                        {/* Show unapprove button for approved drivers when showReview is true */}
+                        {showReview && activeTab === "kycApproved" && (
+                            <div className="flex justify-center pt-6">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (window.confirm("Are you sure you want to unapprove this driver?")) {
+                                            handleUnverifyDriver(selectedDriver._id);
+                                        }
+                                    }}
+                                    disabled={isLoading}
+                                    className="flex items-center gap-2 rounded-md bg-red-500 px-6 py-2 text-white transition hover:bg-red-600 disabled:opacity-50"
+                                >
+                                    {isLoading ? (
+                                        <Loader2
+                                            className="animate-spin"
+                                            size={18}
+                                        />
+                                    ) : null}
+                                    Unapprove Driver
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
             </Modal>
         </div>
     );
+};
+Drivers.propTypes = {
+    showReview: PropTypes.bool,
+    showWalletBalance: PropTypes.bool,
 };
 
 export default Drivers;

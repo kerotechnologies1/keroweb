@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
+import PropTypes from "prop-types";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -14,6 +15,7 @@ import Settings from "./routes/setting";
 import Drivers from "./routes/drivers";
 import Transactions from "./routes/transactions";
 import PricingManagement from "./routes/pricing";
+import PushNotifications from "./routes/push-notification";
 import HomePage from "./routes/homepage";
 import DriverTerms from "./routes/become-a-driver";
 import Policy from "./routes/policy";
@@ -34,7 +36,7 @@ const getUserRole = () => {
             return adminData.role;
         }
         return null;
-    } catch (error) {
+    } catch {
         // console.error("Error parsing admin data:", error);
         return null;
     }
@@ -50,6 +52,16 @@ const isLagosRole = () => {
     return role === "lagos";
 };
 
+const isSupportRole = () => {
+    const role = getUserRole();
+    return role === "support";
+};
+
+const isFinanceRole = () => {
+    const role = getUserRole();
+    return role === "finance";
+};
+
 // Protected Route Component for Admin Dashboard
 const ProtectedAdminRoute = ({ children }) => {
     if (!isAuthenticated()) {
@@ -61,10 +73,29 @@ const ProtectedAdminRoute = ({ children }) => {
         );
     }
 
-    if (isLagosRole()) {
+    const role = getUserRole();
+
+    // Redirect based on role
+    if (role === "lagos") {
         return (
             <Navigate
                 to="/dashboard/lagos"
+                replace
+            />
+        );
+    }
+    if (role === "support") {
+        return (
+            <Navigate
+                to="/dashboard/support"
+                replace
+            />
+        );
+    }
+    if (role === "finance") {
+        return (
+            <Navigate
+                to="/dashboard/finance"
                 replace
             />
         );
@@ -82,6 +113,10 @@ const ProtectedAdminRoute = ({ children }) => {
     return children;
 };
 
+ProtectedAdminRoute.propTypes = {
+    children: PropTypes.node.isRequired,
+};
+
 // Protected Route Component for Lagos Dashboard
 const ProtectedLagosRoute = ({ children }) => {
     if (!isAuthenticated()) {
@@ -93,10 +128,29 @@ const ProtectedLagosRoute = ({ children }) => {
         );
     }
 
-    if (isAdminRole()) {
+    const role = getUserRole();
+
+    // Redirect based on role
+    if (role === "admin") {
         return (
             <Navigate
                 to="/dashboard"
+                replace
+            />
+        );
+    }
+    if (role === "support") {
+        return (
+            <Navigate
+                to="/dashboard/support"
+                replace
+            />
+        );
+    }
+    if (role === "finance") {
+        return (
+            <Navigate
+                to="/dashboard/finance"
                 replace
             />
         );
@@ -114,14 +168,33 @@ const ProtectedLagosRoute = ({ children }) => {
     return children;
 };
 
-// Smart Login Route Component
-const SmartLogin = () => {
+ProtectedLagosRoute.propTypes = {
+    children: PropTypes.node.isRequired,
+};
+
+// Protected Route Component for Support Dashboard
+const ProtectedSupportRoute = ({ children }) => {
     if (!isAuthenticated()) {
-        return <Login />;
+        return (
+            <Navigate
+                to="/login"
+                replace
+            />
+        );
     }
 
-    // If already authenticated, redirect based on role
-    if (isLagosRole()) {
+    const role = getUserRole();
+
+    // Redirect based on role
+    if (role === "admin") {
+        return (
+            <Navigate
+                to="/dashboard"
+                replace
+            />
+        );
+    }
+    if (role === "lagos") {
         return (
             <Navigate
                 to="/dashboard/lagos"
@@ -129,11 +202,123 @@ const SmartLogin = () => {
             />
         );
     }
+    if (role === "finance") {
+        return (
+            <Navigate
+                to="/dashboard/finance"
+                replace
+            />
+        );
+    }
 
-    if (isAdminRole()) {
+    if (!isSupportRole()) {
+        return (
+            <Navigate
+                to="/"
+                replace
+            />
+        );
+    }
+
+    return children;
+};
+
+ProtectedSupportRoute.propTypes = {
+    children: PropTypes.node.isRequired,
+};
+
+// Protected Route Component for Finance Dashboard
+const ProtectedFinanceRoute = ({ children }) => {
+    if (!isAuthenticated()) {
+        return (
+            <Navigate
+                to="/login"
+                replace
+            />
+        );
+    }
+
+    const role = getUserRole();
+
+    // Redirect based on role
+    if (role === "admin") {
         return (
             <Navigate
                 to="/dashboard"
+                replace
+            />
+        );
+    }
+    if (role === "lagos") {
+        return (
+            <Navigate
+                to="/dashboard/lagos"
+                replace
+            />
+        );
+    }
+    if (role === "support") {
+        return (
+            <Navigate
+                to="/dashboard/support"
+                replace
+            />
+        );
+    }
+
+    if (!isFinanceRole()) {
+        return (
+            <Navigate
+                to="/"
+                replace
+            />
+        );
+    }
+
+    return children;
+};
+
+ProtectedFinanceRoute.propTypes = {
+    children: PropTypes.node.isRequired,
+};
+
+// Smart Login Route Component
+const SmartLogin = () => {
+    if (!isAuthenticated()) {
+        return <Login />;
+    }
+
+    // If already authenticated, redirect based on role
+    const role = getUserRole();
+
+    if (role === "lagos") {
+        return (
+            <Navigate
+                to="/dashboard/lagos"
+                replace
+            />
+        );
+    }
+    if (role === "admin") {
+        return (
+            <Navigate
+                to="/dashboard"
+                replace
+            />
+        );
+    }
+    if (role === "support") {
+        return (
+            <Navigate
+                to="/dashboard/support"
+                replace
+            />
+        );
+    }
+    if (role === "finance") {
+        return (
+            <Navigate
+                to="/dashboard/finance"
                 replace
             />
         );
@@ -170,7 +355,7 @@ const router = createBrowserRouter([
         path: "/dashboard",
         element: (
             <ProtectedAdminRoute>
-                <Layout />
+                <Layout location="admin" />
             </ProtectedAdminRoute>
         ),
         children: [
@@ -197,6 +382,10 @@ const router = createBrowserRouter([
             {
                 path: "transactions",
                 element: <Transactions />,
+            },
+            {
+                path: "notifications",
+                element: <PushNotifications />,
             },
             {
                 path: "admins",
@@ -228,6 +417,108 @@ const router = createBrowserRouter([
             <ProtectedLagosRoute>
                 <Layout location="lagos" />
             </ProtectedLagosRoute>
+        ),
+        children: [
+            {
+                index: true,
+                element: <Dashboard />,
+            },
+            {
+                path: "rides",
+                element: (
+                    <Rides
+                        showKeroCommission={false}
+                        showFare={false}
+                    />
+                ),
+            },
+            {
+                path: "drivers",
+                element: (
+                    <Drivers
+                        showReview={false}
+                        showWalletBalance={false}
+                    />
+                ),
+            },
+            {
+                path: "riders",
+                element: <Riders showWalletBalance={false} />,
+            },
+            {
+                path: "transactions",
+                element: <Transactions lagosAdmin={true} />,
+            },
+            {
+                path: "logout",
+                loader: () => {
+                    handleLogout();
+                    return null;
+                },
+                element: (
+                    <Navigate
+                        to="/login"
+                        replace
+                    />
+                ),
+            },
+        ],
+    },
+    // Support Dashboard Routes
+    {
+        path: "/dashboard/support",
+        element: (
+            <ProtectedSupportRoute>
+                <Layout location="support" />
+            </ProtectedSupportRoute>
+        ),
+        children: [
+            {
+                index: true,
+                element: <Dashboard />,
+            },
+            {
+                path: "rides",
+                element: <Rides />,
+            },
+            {
+                path: "drivers",
+                element: <Drivers />,
+            },
+            {
+                path: "riders",
+                element: <Riders />,
+            },
+            {
+                path: "transactions",
+                element: <Transactions />,
+            },
+            {
+                path: "notifications",
+                element: <PushNotifications />,
+            },
+            {
+                path: "logout",
+                loader: () => {
+                    handleLogout();
+                    return null;
+                },
+                element: (
+                    <Navigate
+                        to="/login"
+                        replace
+                    />
+                ),
+            },
+        ],
+    },
+    // Finance Dashboard Routes
+    {
+        path: "/dashboard/finance",
+        element: (
+            <ProtectedFinanceRoute>
+                <Layout location="finance" />
+            </ProtectedFinanceRoute>
         ),
         children: [
             {

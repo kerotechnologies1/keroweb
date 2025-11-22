@@ -31,15 +31,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
-        if (error.config.url.includes('/admin/login') && error.response?.status === 401) {
+        if (error.config.url.includes("/admin/login") && error.response?.status === 401) {
             return Promise.reject(error);
         }
-        
+
         if (error.response && error.response.status === 401) {
             handleLogout(); // Auto logout if unauthorized
-
         } else {
-            toast.error("Network error. Please check your connection.");
+            // toast.error("Network error. Please check your connection.");
         }
         return Promise.reject(error);
     },
