@@ -1,15 +1,40 @@
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
-import { flexRender, getCoreRowModel, getPaginationRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
+import {
+    flexRender,
+    getCoreRowModel,
+    getPaginationRowModel,
+    getFilteredRowModel,
+    getSortedRowModel,
+    useReactTable,
+} from "@tanstack/react-table";
 import { Search, Plus, Edit, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 import Modal from "@/components/modal";
 import api from "@/utils/api";
 
-// Helper: convert a 0–1 rate to a display percentage string e.g. 0.15 → "15"
-const rateToPercent = (rate) => (rate != null ? String(Number(rate) * 100) : "");
-// Helper: convert a display percentage string back to a 0–1 rate e.g. "15" → 0.15
-const percentToRate = (pct) => Number(pct) / 100;
+// FIX 1: Guard against NaN — if pct is empty/null/undefined, return 0
+const percentToRate = (pct) => {
+    const n = parseFloat(pct);
+    return isNaN(n) ? 0 : n / 100;
+};
+
+// FIX 2: Guard against null/undefined from API — always return a string
+const rateToPercent = (rate) => {
+    const n = parseFloat(rate);
+    return isNaN(n) ? "" : String(n * 100);
+};
+
+const defaultForm = {
+    vehicleType:         "",
+    pricePerKm:          "",
+    pricePerMin:         "20",
+    baseFare:            "600",
+    minimumFare:         "1000",
+    keroCommissionRate:  "",   // displayed as % e.g. "15" for 15%
+    lagosCommissionRate: "0",  // displayed as % e.g. "0"
+    isActive:            true,
+};
 
 const PricingManagement = () => {
     const [pricing, setPricing] = useState([]);
@@ -20,21 +45,7 @@ const PricingManagement = () => {
     const [isEditMode, setIsEditMode] = useState(false);
     const [currentPricing, setCurrentPricing] = useState(null);
     const [globalFilter, setGlobalFilter] = useState("");
-
-    // formData mirrors the new backend fields.
-    // keroCommissionRate and lagosCommissionRate are stored here as PERCENTAGE
-    // strings (e.g. "15" for 15%) for easy display in the input, and converted
-    // to 0–1 rates only when the request is sent.
-    const [formData, setFormData] = useState({
-        vehicleType:         "",
-        pricePerKm:          "",
-        pricePerMin:         "20",
-        baseFare:            "600",
-        minimumFare:         "1000",
-        keroCommissionRate:  "",     // displayed as % e.g. "15"
-        lagosCommissionRate: "0",    // displayed as % e.g. "0"
-        isActive:            true,
-    });
+    const [formData, setFormData] = useState(defaultForm);
 
     // ── Fetch pricing data ────────────────────────────────────────────────────
     const getPricing = async () => {
@@ -61,19 +72,19 @@ const PricingManagement = () => {
 
     // ── Fetch vehicle types ───────────────────────────────────────────────────
     const getVehicleTypes = async () => {
-        const loadingToast = toast.loading("Fetching Vehicle Type...");
+        const loadingToast = toast.loading("Fetching Vehicle Types...");
         try {
             const response = await api.get("/admin/vehicletypes");
             setVehicleTypes(response.data.data);
             toast.update(loadingToast, {
-                render: "Vehicle Type loaded",
+                render: "Vehicle Types loaded",
                 type: "success",
                 isLoading: false,
                 autoClose: 2000,
             });
         } catch (error) {
             toast.update(loadingToast, {
-                render: error.response?.data?.message || "Error fetching pricing data",
+                render: error.response?.data?.message || "Error fetching vehicle types",
                 type: "error",
                 isLoading: false,
                 autoClose: 2000,
@@ -84,26 +95,17 @@ const PricingManagement = () => {
     // ── Handle form input changes ─────────────────────────────────────────────
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData({
-            ...formData,
+        setFormData((prev) => ({
+            ...prev,
             [name]: type === "checkbox" ? checked : value,
-        });
+        }));
     };
 
     // ── Open modal for adding new pricing ─────────────────────────────────────
     const openAddModal = () => {
         setIsEditMode(false);
         setCurrentPricing(null);
-        setFormData({
-            vehicleType:         "",
-            pricePerKm:          "",
-            pricePerMin:         "20",
-            baseFare:            "600",
-            minimumFare:         "1000",
-            keroCommissionRate:  "",
-            lagosCommissionRate: "0",
-            isActive:            true,
-        });
+        setFormData(defaultForm);
         setIsModalOpen(true);
     };
 
@@ -112,12 +114,13 @@ const PricingManagement = () => {
         setIsEditMode(true);
         setCurrentPricing(pricingRow);
         setFormData({
-            vehicleType:         pricingRow.vehicleType._id,
-            pricePerKm:          String(pricingRow.pricePerKm),
+            // FIX 3: vehicleType must stay as a string ID, not the populated object
+            vehicleType:         pricingRow.vehicleType?._id ?? pricingRow.vehicleType ?? "",
+            pricePerKm:          String(pricingRow.pricePerKm ?? ""),
             pricePerMin:         String(pricingRow.pricePerMin ?? 20),
             baseFare:            String(pricingRow.baseFare ?? 600),
             minimumFare:         String(pricingRow.minimumFare ?? 1000),
-            // Convert stored 0–1 rates → display percentages
+            // FIX 4: use guarded rateToPercent so null/undefined never becomes ""
             keroCommissionRate:  rateToPercent(pricingRow.keroCommissionRate),
             lagosCommissionRate: rateToPercent(pricingRow.lagosCommissionRate ?? 0),
             isActive:            pricingRow.isActive ?? true,
@@ -128,12 +131,22 @@ const PricingManagement = () => {
     // ── Submit form (add and edit) ────────────────────────────────────────────
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const loadingToast = toast.loading(
-            isEditMode ? "Updating pricing..." : "Creating new pricing..."
-        );
 
-        // Build the payload the new backend expects.
-        // Commission rates are sent as 0–1 decimals, not percentages.
+        // FIX 5: Validate on the frontend before sending anything
+        if (!formData.vehicleType) {
+            toast.error("Please select a vehicle type.");
+            return;
+        }
+        if (formData.pricePerKm === "" || isNaN(Number(formData.pricePerKm))) {
+            toast.error("Price per km is required.");
+            return;
+        }
+        if (formData.keroCommissionRate === "" || isNaN(Number(formData.keroCommissionRate))) {
+            toast.error("Kero commission rate is required.");
+            return;
+        }
+
+        // FIX 6: Build payload with guarded percentToRate — no NaN ever reaches backend
         const payload = {
             vehicleType:         formData.vehicleType,
             pricePerKm:          Number(formData.pricePerKm),
@@ -144,6 +157,13 @@ const PricingManagement = () => {
             lagosCommissionRate: percentToRate(formData.lagosCommissionRate),
             isActive:            formData.isActive,
         };
+
+        // Debug: remove this after confirming it works
+        console.log("Payload →", JSON.stringify(payload, null, 2));
+
+        const loadingToast = toast.loading(
+            isEditMode ? "Updating pricing..." : "Creating new pricing..."
+        );
 
         try {
             if (isEditMode && currentPricing?._id) {
@@ -191,7 +211,7 @@ const PricingManagement = () => {
         if (result.isConfirmed) {
             try {
                 const response = await api.delete(`/admin/pricing/${id}`);
-                await Swal.fire("Deleted!", response.data.message || "Pricing deleted successfully.", "success");
+                await Swal.fire("Deleted!", response.data.message || "Pricing deleted.", "success");
                 getPricing();
             } catch (error) {
                 Swal.fire("Error!", error.response?.data?.message || "Failed to delete pricing", "error");
@@ -211,7 +231,8 @@ const PricingManagement = () => {
             {
                 accessorKey: "vehicleType",
                 header: "Vehicle Type",
-                cell: (info) => info.getValue().name,
+                // FIX 7: safely access name in case vehicleType isn't populated
+                cell: (info) => info.getValue()?.name ?? "—",
             },
             {
                 accessorKey: "pricePerKm",
@@ -231,7 +252,6 @@ const PricingManagement = () => {
             {
                 accessorKey: "keroCommissionRate",
                 header: "Kero Commission",
-                // Display as a percentage e.g. 0.15 → "15%"
                 cell: (info) => `${((info.getValue() ?? 0) * 100).toFixed(1)}%`,
             },
             {
@@ -283,24 +303,16 @@ const PricingManagement = () => {
     const table = useReactTable({
         data: filteredPricing,
         columns,
-        state: {
-            globalFilter,
-            sorting,
-        },
+        state: { globalFilter, sorting },
         onGlobalFilterChange: setGlobalFilter,
         onSortingChange: setSorting,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
-        initialState: {
-            pagination: {
-                pageSize: 10,
-            },
-        },
+        initialState: { pagination: { pageSize: 10 } },
     });
 
-    // ── Fetch data on mount ───────────────────────────────────────────────────
     useEffect(() => {
         getPricing();
         getVehicleTypes();
@@ -344,9 +356,7 @@ const PricingManagement = () => {
                                             key={header.id}
                                             className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
                                             onClick={header.column.getToggleSortingHandler()}
-                                            style={{
-                                                cursor: header.column.getCanSort() ? "pointer" : "default",
-                                            }}
+                                            style={{ cursor: header.column.getCanSort() ? "pointer" : "default" }}
                                         >
                                             <div className="flex items-center">
                                                 {flexRender(header.column.columnDef.header, header.getContext())}
@@ -362,10 +372,7 @@ const PricingManagement = () => {
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
                             {table.getRowModel().rows.map((row) => (
-                                <tr
-                                    key={row.id}
-                                    className="hover:bg-gray-50"
-                                >
+                                <tr key={row.id} className="hover:bg-gray-50">
                                     {row.getVisibleCells().map((cell) => (
                                         <td
                                             key={cell.id}
@@ -384,14 +391,11 @@ const PricingManagement = () => {
                     <p className="p-4 text-center">No pricing data found</p>
                 )}
 
-                {/* Pagination */}
                 <div className="mt-4 flex items-center justify-between">
-                    <div>
-                        <span className="text-sm text-gray-700 dark:text-white">
-                            Showing <span className="font-medium">{table.getRowModel().rows.length}</span> of{" "}
-                            <span className="font-medium">{filteredPricing.length}</span> results
-                        </span>
-                    </div>
+                    <span className="text-sm text-gray-700 dark:text-white">
+                        Showing <span className="font-medium">{table.getRowModel().rows.length}</span> of{" "}
+                        <span className="font-medium">{filteredPricing.length}</span> results
+                    </span>
                     <div className="flex space-x-2">
                         <button
                             onClick={() => table.previousPage()}
@@ -412,41 +416,41 @@ const PricingManagement = () => {
             </div>
 
             {/* Pricing Form Modal */}
-            <Modal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-            >
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 <div className="space-y-6">
                     <h3 className="text-center text-xl font-bold">
                         {isEditMode ? "Edit Pricing" : "Add New Pricing"}
                     </h3>
 
-                    <form
-                        onSubmit={handleSubmit}
-                        className="space-y-4"
-                    >
+                    <form onSubmit={handleSubmit} className="space-y-4">
                         {/* Vehicle Type */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-white">
                                 Vehicle Type
                             </label>
+                            {/* FIX 8: removed `disabled` — use readOnly styling instead so the
+                                value is still part of the form. The select is visually locked in
+                                edit mode via pointer-events:none but the value is submitted. */}
                             <select
                                 name="vehicleType"
                                 value={formData.vehicleType}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 dark:text-gray-700 sm:text-sm"
                                 required
-                                disabled={isEditMode}
+                                style={isEditMode ? { pointerEvents: "none", opacity: 0.6 } : {}}
+                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 dark:text-gray-700 sm:text-sm"
                             >
-                                <option className="dark:text-gray-700" value="">
-                                    Select Vehicle Type
-                                </option>
+                                <option value="">Select Vehicle Type</option>
                                 {vehicleTypes.map((type) => (
                                     <option key={type._id} value={type._id}>
                                         {type.name}
                                     </option>
                                 ))}
                             </select>
+                            {isEditMode && (
+                                <p className="mt-1 text-xs text-gray-400">
+                                    Vehicle type cannot be changed after creation.
+                                </p>
+                            )}
                         </div>
 
                         {/* Price Per Km */}
@@ -463,6 +467,7 @@ const PricingManagement = () => {
                                 required
                                 min="0"
                                 step="0.01"
+                                placeholder="e.g. 150"
                             />
                         </div>
 
@@ -537,7 +542,7 @@ const PricingManagement = () => {
                                 placeholder="e.g. 15 for 15%"
                             />
                             <p className="mt-1 text-xs text-gray-500">
-                                Enter as a percentage — e.g. enter 15 for 15% of the fare
+                                Enter as a percentage — e.g. enter 15 for 15%
                             </p>
                         </div>
 
