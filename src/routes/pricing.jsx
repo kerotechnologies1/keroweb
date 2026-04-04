@@ -6,6 +6,11 @@ import { Search, Plus, Edit, Trash2, ChevronUp, ChevronDown } from "lucide-react
 import Modal from "@/components/modal";
 import api from "@/utils/api";
 
+// Helper: convert a 0–1 rate to a display percentage string e.g. 0.15 → "15"
+const rateToPercent = (rate) => (rate != null ? String(Number(rate) * 100) : "");
+// Helper: convert a display percentage string back to a 0–1 rate e.g. "15" → 0.15
+const percentToRate = (pct) => Number(pct) / 100;
+
 const PricingManagement = () => {
     const [pricing, setPricing] = useState([]);
     const [vehicleTypes, setVehicleTypes] = useState([]);
@@ -15,19 +20,27 @@ const PricingManagement = () => {
     const [isEditMode, setIsEditMode] = useState(false);
     const [currentPricing, setCurrentPricing] = useState(null);
     const [globalFilter, setGlobalFilter] = useState("");
+
+    // formData mirrors the new backend fields.
+    // keroCommissionRate and lagosCommissionRate are stored here as PERCENTAGE
+    // strings (e.g. "15" for 15%) for easy display in the input, and converted
+    // to 0–1 rates only when the request is sent.
     const [formData, setFormData] = useState({
-        pricePerKm: "",
-        keroCommission: "",
-        lagosCommission: "30",
-        vehicleType: "",
+        vehicleType:         "",
+        pricePerKm:          "",
+        pricePerMin:         "20",
+        baseFare:            "600",
+        minimumFare:         "1000",
+        keroCommissionRate:  "",     // displayed as % e.g. "15"
+        lagosCommissionRate: "0",    // displayed as % e.g. "0"
+        isActive:            true,
     });
 
-    // Fetch pricing data
+    // ── Fetch pricing data ────────────────────────────────────────────────────
     const getPricing = async () => {
         const loadingToast = toast.loading("Fetching pricing data...");
         try {
             const response = await api.get("/admin/pricing");
-            // console.log(response.data.data);
             setPricing(response.data.data);
             setFilteredPricing(response.data.data);
             toast.update(loadingToast, {
@@ -46,13 +59,12 @@ const PricingManagement = () => {
         }
     };
 
-    // Fetch vehicle types
+    // ── Fetch vehicle types ───────────────────────────────────────────────────
     const getVehicleTypes = async () => {
         const loadingToast = toast.loading("Fetching Vehicle Type...");
         try {
             const response = await api.get("/admin/vehicletypes");
             setVehicleTypes(response.data.data);
-            // console.log(response.data);
             toast.update(loadingToast, {
                 render: "Vehicle Type loaded",
                 type: "success",
@@ -69,82 +81,102 @@ const PricingManagement = () => {
         }
     };
 
-    // Handle form input changes
+    // ── Handle form input changes ─────────────────────────────────────────────
     const handleInputChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value, type, checked } = e.target;
         setFormData({
             ...formData,
-            [name]: value,
+            [name]: type === "checkbox" ? checked : value,
         });
     };
 
-    // Open modal for adding new pricing
+    // ── Open modal for adding new pricing ─────────────────────────────────────
     const openAddModal = () => {
         setIsEditMode(false);
         setCurrentPricing(null);
         setFormData({
-            pricePerKm: "",
-            keroCommission: "",
-            lagosCommission: "30",
-            vehicleType: "",
+            vehicleType:         "",
+            pricePerKm:          "",
+            pricePerMin:         "20",
+            baseFare:            "600",
+            minimumFare:         "1000",
+            keroCommissionRate:  "",
+            lagosCommissionRate: "0",
+            isActive:            true,
         });
         setIsModalOpen(true);
     };
 
-    // Open modal for editing pricing
-    const openEditModal = (pricing) => {
+    // ── Open modal for editing pricing ────────────────────────────────────────
+    const openEditModal = (pricingRow) => {
         setIsEditMode(true);
-        setCurrentPricing(pricing);
+        setCurrentPricing(pricingRow);
         setFormData({
-            pricePerKm: pricing.pricePerKm,
-            keroCommission: pricing.keroCommission,
-            lagosCommission: pricing.lagosCommission || "30",
-            vehicleType: pricing.vehicleType._id, // Make sure to use the ID
+            vehicleType:         pricingRow.vehicleType._id,
+            pricePerKm:          String(pricingRow.pricePerKm),
+            pricePerMin:         String(pricingRow.pricePerMin ?? 20),
+            baseFare:            String(pricingRow.baseFare ?? 600),
+            minimumFare:         String(pricingRow.minimumFare ?? 1000),
+            // Convert stored 0–1 rates → display percentages
+            keroCommissionRate:  rateToPercent(pricingRow.keroCommissionRate),
+            lagosCommissionRate: rateToPercent(pricingRow.lagosCommissionRate ?? 0),
+            isActive:            pricingRow.isActive ?? true,
         });
         setIsModalOpen(true);
     };
 
-    // Submit form (both add and edit)
+    // ── Submit form (add and edit) ────────────────────────────────────────────
     const handleSubmit = async (e) => {
-      e.preventDefault();
-      const loadingToast = toast.loading(
-        isEditMode ? "Updating pricing..." : "Creating new pricing..."
-      );
+        e.preventDefault();
+        const loadingToast = toast.loading(
+            isEditMode ? "Updating pricing..." : "Creating new pricing..."
+        );
 
-      try {
-        if (isEditMode && currentPricing?._id) {
-          // Update existing pricing
-          await api.put(`/admin/pricing/${currentPricing._id}`, formData);
-          toast.update(loadingToast, {
-            render: "Pricing updated successfully",
-            type: "success",
-            isLoading: false,
-            autoClose: 2000,
-          });
-        } else {
-          // Create new pricing
-          await api.post("/admin/pricing", formData);
-          toast.update(loadingToast, {
-            render: "Pricing created successfully",
-            type: "success",
-            isLoading: false,
-            autoClose: 2000,
-          });
+        // Build the payload the new backend expects.
+        // Commission rates are sent as 0–1 decimals, not percentages.
+        const payload = {
+            vehicleType:         formData.vehicleType,
+            pricePerKm:          Number(formData.pricePerKm),
+            pricePerMin:         Number(formData.pricePerMin),
+            baseFare:            Number(formData.baseFare),
+            minimumFare:         Number(formData.minimumFare),
+            keroCommissionRate:  percentToRate(formData.keroCommissionRate),
+            lagosCommissionRate: percentToRate(formData.lagosCommissionRate),
+            isActive:            formData.isActive,
+        };
+
+        try {
+            if (isEditMode && currentPricing?._id) {
+                await api.put(`/admin/pricing/${currentPricing._id}`, payload);
+                toast.update(loadingToast, {
+                    render: "Pricing updated successfully",
+                    type: "success",
+                    isLoading: false,
+                    autoClose: 2000,
+                });
+            } else {
+                await api.post("/admin/pricing", payload);
+                toast.update(loadingToast, {
+                    render: "Pricing created successfully",
+                    type: "success",
+                    isLoading: false,
+                    autoClose: 2000,
+                });
+            }
+
+            setIsModalOpen(false);
+            getPricing();
+        } catch (error) {
+            toast.update(loadingToast, {
+                render: error.response?.data?.message || "Error processing request",
+                type: "error",
+                isLoading: false,
+                autoClose: 2000,
+            });
         }
-
-        setIsModalOpen(false);
-        getPricing();
-      } catch (error) {
-        toast.update(loadingToast, {
-          render: error.response?.data?.message || "Error processing request",
-          type: "error",
-          isLoading: false,
-          autoClose: 2000,
-        });
-      }
     };
 
-    // Delete pricing with confirmation
+    // ── Delete pricing with confirmation ──────────────────────────────────────
     const handleDelete = async (id) => {
         const result = await Swal.fire({
             title: "Are you sure?",
@@ -167,7 +199,7 @@ const PricingManagement = () => {
         }
     };
 
-    // Table columns
+    // ── Table columns ─────────────────────────────────────────────────────────
     const columns = useMemo(
         () => [
             {
@@ -187,14 +219,40 @@ const PricingManagement = () => {
                 cell: (info) => `₦${info.getValue()}`,
             },
             {
-                accessorKey: "keroCommission",
-                header: "Kero Commission (₦)",
-                cell: (info) => `₦${info.getValue()}`,
+                accessorKey: "baseFare",
+                header: "Base Fare (₦)",
+                cell: (info) => `₦${info.getValue() ?? 600}`,
             },
             {
-                accessorKey: "lagosCommission",
-                header: "Lagos Commission (₦)",
-                cell: (info) => `₦${info.getValue() || 30}`,
+                accessorKey: "minimumFare",
+                header: "Minimum Fare (₦)",
+                cell: (info) => `₦${info.getValue() ?? 1000}`,
+            },
+            {
+                accessorKey: "keroCommissionRate",
+                header: "Kero Commission",
+                // Display as a percentage e.g. 0.15 → "15%"
+                cell: (info) => `${((info.getValue() ?? 0) * 100).toFixed(1)}%`,
+            },
+            {
+                accessorKey: "lagosCommissionRate",
+                header: "Lagos Commission",
+                cell: (info) => `${((info.getValue() ?? 0) * 100).toFixed(1)}%`,
+            },
+            {
+                accessorKey: "isActive",
+                header: "Status",
+                cell: (info) => (
+                    <span
+                        className={`rounded-full px-2 py-1 text-xs font-medium ${
+                            info.getValue()
+                                ? "bg-green-100 text-green-700"
+                                : "bg-red-100 text-red-700"
+                        }`}
+                    >
+                        {info.getValue() ? "Active" : "Inactive"}
+                    </span>
+                ),
             },
             {
                 id: "actions",
@@ -221,7 +279,7 @@ const PricingManagement = () => {
         [],
     );
 
-    // Initialize table
+    // ── Initialize table ──────────────────────────────────────────────────────
     const table = useReactTable({
         data: filteredPricing,
         columns,
@@ -242,16 +300,13 @@ const PricingManagement = () => {
         },
     });
 
-    // Fetch data on component mount
+    // ── Fetch data on mount ───────────────────────────────────────────────────
     useEffect(() => {
         getPricing();
         getVehicleTypes();
     }, []);
 
-    useEffect(() => {
-        // console.log("vehicleTypes:", vehicleTypes);
-    }, [vehicleTypes]);
-
+    // ── Render ────────────────────────────────────────────────────────────────
     return (
         <div className="dashboard-content p-3 md:p-4">
             <div className="flex items-center justify-between">
@@ -325,7 +380,9 @@ const PricingManagement = () => {
                     </table>
                 </div>
 
-                {filteredPricing.length === 0 && <p className="p-4 text-center">No pricing data found</p>}
+                {filteredPricing.length === 0 && (
+                    <p className="p-4 text-center">No pricing data found</p>
+                )}
 
                 {/* Pagination */}
                 <div className="mt-4 flex items-center justify-between">
@@ -360,14 +417,19 @@ const PricingManagement = () => {
                 onClose={() => setIsModalOpen(false)}
             >
                 <div className="space-y-6">
-                    <h3 className="text-center text-xl font-bold">{isEditMode ? "Edit Pricing" : "Add New Pricing"}</h3>
+                    <h3 className="text-center text-xl font-bold">
+                        {isEditMode ? "Edit Pricing" : "Add New Pricing"}
+                    </h3>
 
                     <form
                         onSubmit={handleSubmit}
                         className="space-y-4"
                     >
+                        {/* Vehicle Type */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-white">Vehicle Type</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-white">
+                                Vehicle Type
+                            </label>
                             <select
                                 name="vehicleType"
                                 value={formData.vehicleType}
@@ -376,25 +438,22 @@ const PricingManagement = () => {
                                 required
                                 disabled={isEditMode}
                             >
-                                <option
-                                    className="dark:text-gray-700"
-                                    value=""
-                                >
+                                <option className="dark:text-gray-700" value="">
                                     Select Vehicle Type
                                 </option>
                                 {vehicleTypes.map((type) => (
-                                    <option
-                                        key={type._id}
-                                        value={type._id}
-                                    >
+                                    <option key={type._id} value={type._id}>
                                         {type.name}
                                     </option>
                                 ))}
                             </select>
                         </div>
 
+                        {/* Price Per Km */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-white">Price Per Km (₦)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-white">
+                                Price Per Km (₦)
+                            </label>
                             <input
                                 type="number"
                                 name="pricePerKm"
@@ -407,12 +466,15 @@ const PricingManagement = () => {
                             />
                         </div>
 
+                        {/* Price Per Minute */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-white">Kero Commission (₦)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-white">
+                                Price Per Minute (₦)
+                            </label>
                             <input
                                 type="number"
-                                name="keroCommission"
-                                value={formData.keroCommission}
+                                name="pricePerMin"
+                                value={formData.pricePerMin}
                                 onChange={handleInputChange}
                                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 dark:text-gray-700 sm:text-sm"
                                 required
@@ -421,21 +483,98 @@ const PricingManagement = () => {
                             />
                         </div>
 
+                        {/* Base Fare */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-white">Lagos Commission (₦)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-white">
+                                Base Fare (₦)
+                            </label>
                             <input
                                 type="number"
-                                name="lagosCommission"
-                                value={formData.lagosCommission}
+                                name="baseFare"
+                                value={formData.baseFare}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full cursor-not-allowed rounded-md border border-gray-300 bg-gray-100 px-3 py-2 shadow-sm dark:text-gray-700 sm:text-sm"
-                                disabled
+                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 dark:text-gray-700 sm:text-sm"
+                                required
                                 min="0"
                                 step="0.01"
                             />
-                            <p className="mt-1 text-xs text-gray-500">Lagos Commission is fixed at ₦30</p>
+                            <p className="mt-1 text-xs text-gray-500">Flat fee charged at the start of every trip</p>
                         </div>
 
+                        {/* Minimum Fare */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-white">
+                                Minimum Fare (₦)
+                            </label>
+                            <input
+                                type="number"
+                                name="minimumFare"
+                                value={formData.minimumFare}
+                                onChange={handleInputChange}
+                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 dark:text-gray-700 sm:text-sm"
+                                required
+                                min="0"
+                                step="0.01"
+                            />
+                            <p className="mt-1 text-xs text-gray-500">Fare will never go below this amount</p>
+                        </div>
+
+                        {/* Kero Commission Rate */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-white">
+                                Kero Commission (%)
+                            </label>
+                            <input
+                                type="number"
+                                name="keroCommissionRate"
+                                value={formData.keroCommissionRate}
+                                onChange={handleInputChange}
+                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 dark:text-gray-700 sm:text-sm"
+                                required
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                placeholder="e.g. 15 for 15%"
+                            />
+                            <p className="mt-1 text-xs text-gray-500">
+                                Enter as a percentage — e.g. enter 15 for 15% of the fare
+                            </p>
+                        </div>
+
+                        {/* Lagos Commission Rate */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-white">
+                                Lagos Commission (%)
+                            </label>
+                            <input
+                                type="number"
+                                name="lagosCommissionRate"
+                                value={formData.lagosCommissionRate}
+                                onChange={handleInputChange}
+                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 dark:text-gray-700 sm:text-sm"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                placeholder="e.g. 0 for 0%"
+                            />
+                        </div>
+
+                        {/* Active toggle */}
+                        <div className="flex items-center gap-3">
+                            <input
+                                type="checkbox"
+                                id="isActive"
+                                name="isActive"
+                                checked={formData.isActive}
+                                onChange={handleInputChange}
+                                className="h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                            />
+                            <label htmlFor="isActive" className="text-sm font-medium text-gray-700 dark:text-white">
+                                Active
+                            </label>
+                        </div>
+
+                        {/* Actions */}
                         <div className="flex justify-end space-x-3 pt-4">
                             <button
                                 type="button"
