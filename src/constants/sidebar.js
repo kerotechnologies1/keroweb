@@ -1,4 +1,4 @@
-import { LayoutDashboard, Car, UserCog, Users, DollarSign, Receipt, LogOut, Shield, AlertTriangle, Bell, Gift } from "lucide-react";
+import { LayoutDashboard, Car, UserCog, Users, DollarSign, Receipt, LogOut, Shield, AlertTriangle, Bell, Gift, TrendingUp  } from "lucide-react";
 
 export const defaultMenuItems = [
     { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
@@ -6,6 +6,7 @@ export const defaultMenuItems = [
     { label: "Driver", path: "/dashboard/drivers", icon: UserCog },
     { label: "Riders", path: "/dashboard/riders", icon: Users },
     { label: "Pricing", path: "/dashboard/pricing", icon: DollarSign },
+    { label: "Surge", path: "/dashboard/surge", icon: TrendingUp },
     { label: "Transactions", path: "/dashboard/transactions", icon: Receipt },
     { label: "Rewards", path: "/dashboard/rewards", icon: Gift },
     { label: "Push Notifications", path: "/dashboard/notifications", icon: Bell },
