@@ -15,6 +15,7 @@ import Settings from "./routes/setting";
 import Drivers from "./routes/drivers";
 import Transactions from "./routes/transactions";
 import PricingManagement from "./routes/pricing";
+import SurgeManagement from "./routes/surge";
 import Rewards from "./routes/rewards";
 import PushNotifications from "./routes/push-notification";
 import HomePage from "./routes/homepage";
@@ -379,6 +380,10 @@ const router = createBrowserRouter([
             {
                 path: "pricing",
                 element: <PricingManagement />,
+            },
+            {
+                path: "surge",
+                element: <SurgeManagement />,
             },
             {
                 path: "transactions",
